@@ -1,0 +1,4 @@
+/target
+.env
+configuration/local.yaml
+configuration/production.yaml
