@@ -4,9 +4,12 @@ use actix_mysql::{
         DatabaseSettings,
         Settings,
     },
+    cupom::{
+        get_cupom,
+        post_cupom,
+    },
     routes::{
         health_check,
-        get_cupom,
     },
     telemetry::{get_subscriber, init_subscriber},
 };
@@ -22,6 +25,28 @@ use sqlx::{
 use tracing_actix_web::TracingLogger;
 use std::net::TcpListener;
 
+pub fn run(
+    listener: TcpListener,
+    db_pool: MySqlPool,
+    base_url: String,
+) -> Result<Server, std::io::Error> {
+    let db_pool = Data::new(db_pool);
+    let base_url = Data::new(ApplicationBaseUrl(base_url));
+    let server = HttpServer::new(move || {
+        App::new()
+            // TracingLogger instead of default actix_web logger to return with request_id (and other information aswell)
+            .wrap(TracingLogger::default())
+            .service(health_check)
+            .service(get_cupom)
+            .service(post_cupom )
+            .app_data(db_pool.clone())
+            .app_data(base_url.clone())
+    })
+    .listen(listener)?
+    .run();
+
+    return Ok(server);
+}
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -92,24 +117,3 @@ fn get_connection_pool(configuration: &DatabaseSettings) -> MySqlPool {
     .connect_lazy_with(configuration.with_db());
 }
 
-pub fn run(
-    listener: TcpListener,
-    db_pool: MySqlPool,
-    base_url: String,
-) -> Result<Server, std::io::Error> {
-    let db_pool = Data::new(db_pool);
-    let base_url = Data::new(ApplicationBaseUrl(base_url));
-    let server = HttpServer::new(move || {
-        App::new()
-            // TracingLogger instead of default actix_web logger to return with request_id (and other information aswell)
-            .wrap(TracingLogger::default())
-            .service(health_check)
-            .service(get_cupom)
-            .app_data(db_pool.clone())
-            .app_data(base_url.clone())
-    })
-    .listen(listener)?
-    .run();
-
-    return Ok(server);
-}
