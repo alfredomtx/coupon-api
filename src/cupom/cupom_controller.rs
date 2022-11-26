@@ -1,16 +1,12 @@
 use actix_web::{
-    web, get, post, delete, patch, put, HttpResponse, Responder,
-    http:: {
-        header::ContentType,
-    },
+    web, get, post, HttpResponse,
 };
-use super::model::{Cupom, CupomRequest, CupomResponse, CupomError};
-use super::cupom_service::{insert_cupom};
+use super::model::{CupomRequest, CupomResponse, CupomError};
+use super::cupom_service::*;
 use sqlx::{
     query,
     MySqlPool,
 };
-use serde::{Serialize, Deserialize};
 use anyhow::Context;
 
 
@@ -49,17 +45,9 @@ pub async fn get_cupom(body: web::Json<CupomRequest>, pool: web::Data::<MySqlPoo
     name = "Post cupom", skip(pool)
 )]
 #[post("cupom")]
-pub async fn post_cupom(request: web::Json<CupomRequest>, pool: web::Data::<MySqlPool>) -> impl Responder {
-    match insert_cupom(request, &pool).await {
-        Ok(cupom) => return HttpResponse::Created().json(cupom),
-        Err(error) => {
-            dbg!(error);
-            return HttpResponse::BadRequest().finish();
-
-        }
-    }
-
-
+pub async fn post_cupom(request: web::Json<CupomRequest>, pool: web::Data::<MySqlPool>) -> Result<HttpResponse, CupomError> {
+    let cupom = insert_cupom(request, &pool).await?;
+    return Ok(HttpResponse::Created().json(cupom));
 }
 
 

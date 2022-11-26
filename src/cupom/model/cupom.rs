@@ -33,27 +33,30 @@ pub struct CupomResponse {
 pub enum CupomError {
     #[error("Something went wrong.")]
     GenericError(#[source] anyhow::Error),
+    #[error("Not found.")]
+    NotFoundError(#[source] anyhow::Error),
     #[error(transparent)]
     UnexpectedError(#[from] anyhow::Error),
 }
 
-// Implement Responder Trait for CupomResponse
-impl Responder for CupomResponse {
-    type Body = BoxBody;
+// // Implement Responder Trait for CupomResponse
+// impl Responder for CupomResponse {
+//     type Body = BoxBody;
 
-    fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
-        let res_body = serde_json::to_string(&self).unwrap();
+//     fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
+//         let res_body = serde_json::to_string(&self).unwrap();
 
-        // Create HttpResponse and set Content Type
-        return HttpResponse::Ok()
-           .content_type(ContentType::json())
-           .body(res_body);
-    }
-}
+//         // Create HttpResponse and set Content Type
+//         return HttpResponse::Ok()
+//            .content_type(ContentType::json())
+//            .body(res_body);
+//     }
+// }
 
 impl ResponseError for CupomError {
     fn status_code(&self) -> StatusCode {
         match self {
+            CupomError::NotFoundError(_) => StatusCode::NOT_FOUND,
             CupomError::GenericError(_) => StatusCode::BAD_REQUEST,
             CupomError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
