@@ -5,7 +5,6 @@ use tracing_log::LogTracer;
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 use tracing_subscriber::fmt::MakeWriter;
 
-
 // Compose multiple layers into a `tracing`'s subscriber.
 ///
 /// # Implementation Notes
@@ -17,11 +16,7 @@ use tracing_subscriber::fmt::MakeWriter;
 /// `Send` and `Sync` to make it possible to pass it to `init_subscriber`
 /// later on.
 /// 
-pub fn get_subscriber<Sink>(
-    name: String,
-    env_filter: String,
-    sink: Sink
-) -> impl Subscriber + Send + Sync
+pub fn get_subscriber<Sink>(name: String, env_filter: String, sink: Sink) -> impl Subscriber + Send + Sync
     where
         // This "weird" syntax is a higher-ranked trait bound (HRTB)
         // It basically means that Sink implements the `MakeWriter`

@@ -1,48 +1,67 @@
-use anyhow::Ok;
-use sqlx::{query, MySqlPool};
+use sqlx::{MySqlPool};
 use actix_web::web::Json;
+use anyhow::{Context, Result, anyhow};
 
-use super::model::{Cupom, CupomRequest, CupomResponse, CupomError};
-use super::cupom_repository::*;
+use super::model::{CupomRequest, CupomResponse, CupomError, CupomInsert};
+use super::cupom_repository;
+use super::cupom_repository::Fields;
+
+
+pub async fn get_all_cupoms(pool: &MySqlPool) -> Result<Vec<CupomResponse>, CupomError> {
+    let cupoms = cupom_repository::get_all(pool).await
+        .map_err(|error| CupomError::UnexpectedError(error.into()))?;
+
+    let cumpoms_response = cupoms
+        .into_iter()
+        // flat_map uses an iterator over the result of the mapping and as a consequence,
+        // it will skip over elements for which the mapping closure returns empty or unsuccessful values
+        .flat_map(|cupom| {
+            match cupom.try_into() {
+                Ok(cupom) => Some(cupom),
+                Err(cupom) => {
+                    tracing::error!("Failed to try_into() {:?}", cupom);
+                    None
+                }
+            }
+        })
+        .collect();
+    return Ok(cumpoms_response);
+}
+
+pub async fn get_cupom_by_id(id: i32, pool: &MySqlPool) -> Result<CupomResponse, CupomError> {
+    let result = cupom_repository::get_by_id(id, pool).await
+        .context("failed to get by id")?;
+
+    let cupom = result.ok_or( CupomError::NotFoundError(anyhow!(format!("Cupom with id `{}` not found", id))))?;
+
+    let cupom_response = cupom.try_into().map_err(CupomError::ValidationError)?;
+    return Ok(cupom_response);
+}
+
+pub async fn get_cupom_by_code(code: String, pool: &MySqlPool) -> Result<CupomResponse, anyhow::Error> {
+    let result = cupom_repository::get_by_field(Fields::Code(code.clone()), pool).await
+        .map_err(|error| CupomError::UnexpectedError(error.into()))?;
+
+    let cupom = result.ok_or(CupomError::NotFoundError(anyhow!(format!("Cupom with code `{}` not found", code))))?;
+
+    let cupom_response = cupom.try_into().map_err(CupomError::ValidationError)?;
+    return Ok(cupom_response);
+}
 
 pub async fn insert_cupom(cupom: Json<CupomRequest>, pool: &MySqlPool) -> Result<CupomResponse, anyhow::Error> {
-    let cupom_request = Cupom {
-        code: String::from(&cupom.code),
+    let cupom_insert = CupomInsert {
+        code: cupom.code.to_string(),
         discount: cupom.discount,
     };
 
-    let result = query!(
-        r#"
-            INSERT INTO cupom (code, discount)
-            VALUES (?, ?)
-        "#,
-        String::from(&cupom_request.code), cupom_request.discount
-    )
-    .execute(pool)
-    .await
-    .map_err( |error| CupomError::UnexpectedError(error.into()))?;
-
-    let inserted_id = result.last_insert_id() as i32;
-
-    let result = get_by_id(inserted_id, pool)
-        .await
+    let inserted_id = cupom_repository::insert(cupom_insert, pool).await
         .map_err(|error| CupomError::UnexpectedError(error.into()))?;
 
-    let cupom = result.ok_or_else(|| {
-        return CupomError::NotFoundError(anyhow::anyhow!("Cupom not found."));
-    })?;
+    let result = cupom_repository::get_by_id(inserted_id as i32, pool).await
+        .map_err(|error| CupomError::UnexpectedError(error.into()))?;
 
-    let cupom_response = CupomResponse { id: inserted_id, code: cupom.code, discount: cupom.discount};
+    let cupom = result.ok_or(CupomError::NotFoundError(anyhow!("not found")))?;
+
+    let cupom_response = cupom.try_into().map_err(CupomError::ValidationError)?;
     return Ok(cupom_response);
-    // match result {
-    //     Some(cupom) => {
-            
-    //     },
-    //     None => {
-    //         return Err(CupomError::NotFoundError(anyhow::anyhow!("Cupom not found.")));
-    //     }
-    // };
-
-
-
 }

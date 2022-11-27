@@ -1,30 +1,88 @@
-use sqlx::{MySqlPool, query};
+use sqlx::{MySqlPool, query, query_as};
 
-use super::model::Cupom;
+use super::model::{Cupom, CupomInsert};
 
-
-pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<Option<Cupom>, sqlx::Error> {
+pub async fn insert(cupom: CupomInsert, pool: &MySqlPool) -> Result<u64, sqlx::Error> {
     let result = query!(
         r#"
-            SELECT * FROM cupom WHERE id = ?
+            INSERT INTO cupom (code, discount)
+            VALUES (?, ?)
         "#,
-        id
+        cupom.code, cupom.discount
     )
-    .fetch_optional(pool)
+    .execute(pool)
     .await
     .map_err(|error| {
-        tracing::error!("Failed to execute query: {:?}", error);
+        tracing::error!("Failed to execute insert query: {:?}", error);
+        error
+    })?;
+    return Ok(result.last_insert_id());
+}
+
+pub async fn get_all(pool: &MySqlPool) -> Result<Vec<Cupom>, sqlx::Error> {
+    let cupoms = query_as!(Cupom, r#"SELECT * FROM cupom"#)
+    .fetch_all(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!("Failed to execute select query: {:?}", error);
         error
     })?;
 
-    match result {
-        Some(cupom) => {
-            let cupom = Cupom { code: cupom.code, discount: cupom.discount };
-            return Ok(Some(cupom));
+   return Ok(cupoms);
+}
+
+pub enum Fields {
+    Id(i32),
+    Code(String),
+    None,
+}
+
+pub async fn get_by_field(field: Fields, pool: &MySqlPool) -> Result<Option<Cupom>, sqlx::Error> {
+    let field_name: String;
+    let field_value: String;
+    match field {
+        Fields::Id(id) => {
+            field_name = "id".to_string();
+            field_value = id.to_string();
         },
-        None => { 
+        Fields::Code(code) => {
+            field_name = "code".to_string();
+            field_value = code.to_string();
+        }
+        Fields::None => {
             return Ok(None);
         }
     }
 
+    let cupom = query_as!(Cupom, 
+        r#"
+            SELECT * FROM cupom WHERE ? = ?
+        "#, field_name, field_value
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!("Failed to execute select query: {:?}", error);
+        error
+    })?;
+
+    return Ok(cupom);
+
 }
+
+pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<Option<Cupom>, sqlx::Error> {
+    let cupom = query_as!(Cupom, 
+        r#"
+            SELECT * FROM cupom WHERE id = ?
+        "#, id
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!("Failed to execute select query: {:?}", error);
+        error
+    })?;
+
+    return Ok(cupom);
+}
+

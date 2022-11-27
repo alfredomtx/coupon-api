@@ -5,8 +5,10 @@ use actix_mysql::{
         Settings,
     },
     cupom::{
-        get_cupom,
-        post_cupom,
+        get_cupom_by_code,
+        get_cupom_by_id,
+        get_all_cupoms,
+        add_cupom,
     },
     routes::{
         health_check,
@@ -37,8 +39,10 @@ pub fn run(
             // TracingLogger instead of default actix_web logger to return with request_id (and other information aswell)
             .wrap(TracingLogger::default())
             .service(health_check)
-            .service(get_cupom)
-            .service(post_cupom )
+            .service(get_cupom_by_id)
+            .service(get_cupom_by_code)
+            .service(get_all_cupoms)
+            .service(add_cupom )
             .app_data(db_pool.clone())
             .app_data(base_url.clone())
     })

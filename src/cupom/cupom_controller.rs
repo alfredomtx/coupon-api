@@ -1,52 +1,50 @@
 use actix_web::{
-    web, get, post, HttpResponse,
+    web, get, post, HttpResponse, Responder
 };
-use super::model::{CupomRequest, CupomResponse, CupomError};
-use super::cupom_service::*;
-use sqlx::{
-    query,
-    MySqlPool,
-};
-use anyhow::Context;
+use super::model::{CupomRequest, CupomError};
+use super::cupom_service;
+use sqlx::MySqlPool;
+use serde::Deserialize;
 
+#[derive(Deserialize, Debug)]
+pub struct Id { id: i32 }
+
+#[derive(Deserialize, Debug)]
+pub struct Code { code: String }
 
 #[tracing::instrument(
-    name = "Get a new cupom", skip(pool)
+    name = "Get all cupoms", skip(pool)
 )]
 #[get("cupom")]
-pub async fn get_cupom(body: web::Json<CupomRequest>, pool: web::Data::<MySqlPool>) -> Result<HttpResponse, CupomError> {
+pub async fn get_all_cupoms(pool: web::Data::<MySqlPool>) -> Result<impl Responder, CupomError> {
+    let cupoms = cupom_service::get_all_cupoms(&pool).await?;
+    return Ok(web::Json(cupoms));
+}
 
-    dbg!(body);
+#[tracing::instrument(
+    name = "Get cupom by id", skip(pool)
+)]
+#[get("cupom/id")]
+pub async fn get_cupom_by_id(request: web::Json<Id>,  pool: web::Data::<MySqlPool>) -> Result<HttpResponse, CupomError> {
+    let cupom = cupom_service::get_cupom_by_id(request.id, &pool).await?;
+    return Ok(HttpResponse::Ok().json(cupom));
+}
 
-    let row: Option<_> = query!(
-        r#"
-        SELECT id, code, discount FROM cupom
-        "#
-    )
-    .fetch_optional(pool.as_ref())
-    .await
-    .context("Failed to perform query")?
-    .map(|row| (row.id, row.code, row.discount));
-
-    // dbg!(row);
-    match row {
-        Some(row) => {
-            let test = CupomResponse { id: row.0, code: row.1, discount: row.2};
-
-            return Ok(HttpResponse::Ok().json(test));
-        },
-        _ => return Ok(HttpResponse::NoContent().finish()),
-    };
-
-
+#[tracing::instrument(
+    name = "Get cupom by code", skip(pool)
+)]
+#[get("cupom/code")]
+pub async fn get_cupom_by_code(request: web::Json<Code>,  pool: web::Data::<MySqlPool>) -> Result<HttpResponse, CupomError> {
+    let cupom = cupom_service::get_cupom_by_code(request.code.clone(), &pool).await?;
+    return Ok(HttpResponse::Ok().json(cupom));
 }
 
 #[tracing::instrument(
     name = "Post cupom", skip(pool)
 )]
 #[post("cupom")]
-pub async fn post_cupom(request: web::Json<CupomRequest>, pool: web::Data::<MySqlPool>) -> Result<HttpResponse, CupomError> {
-    let cupom = insert_cupom(request, &pool).await?;
+pub async fn add_cupom(request: web::Json<CupomRequest>, pool: web::Data::<MySqlPool>) -> Result<HttpResponse, CupomError> {
+    let cupom = cupom_service::insert_cupom(request, &pool).await?;
     return Ok(HttpResponse::Created().json(cupom));
 }
 

@@ -1,19 +1,23 @@
 use actix_web::{ 
-    Responder, HttpResponse, HttpRequest, ResponseError,
-    body::BoxBody,
+    ResponseError,
     http:: {
         StatusCode,
-        header::ContentType,
     },
 };
 use serde::{Serialize, Deserialize};
-use crate::helpers::error_chain_fmt;
-use anyhow::Context;
+// use crate::helpers::error_chain_fmt;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Cupom {
+    pub id: i32,
     pub code: String,
     pub discount: i32,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct CupomInsert {
+   pub code: String,
+   pub discount: i32,
 }
 
 #[derive(Deserialize, Debug)]
@@ -29,43 +33,53 @@ pub struct CupomResponse {
     pub discount: i32,
 }
 
-#[derive(thiserror::Error)]
+#[derive(thiserror::Error, Debug)]
 pub enum CupomError {
-    #[error("Something went wrong.")]
-    GenericError(#[source] anyhow::Error),
+    // #[error("Not found.)]
+    // NotFoundError,
     #[error("Not found.")]
     NotFoundError(#[source] anyhow::Error),
+    // ValidationError has one String parameter
+    #[error("{0}")]
+    ValidationError(String),
     #[error(transparent)]
     UnexpectedError(#[from] anyhow::Error),
 }
 
-// // Implement Responder Trait for CupomResponse
-// impl Responder for CupomResponse {
-//     type Body = BoxBody;
+impl CupomInsert {
+    pub fn from_cupom(cupom: Cupom) -> CupomInsert {
+        return CupomInsert {
+            code: cupom.code
+            , discount: cupom.discount
+        };
+    }
+}
 
-//     fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
-//         let res_body = serde_json::to_string(&self).unwrap();
-
-//         // Create HttpResponse and set Content Type
-//         return HttpResponse::Ok()
-//            .content_type(ContentType::json())
-//            .body(res_body);
-//     }
-// }
+// Convert a Cupom to a CupomResponse
+impl TryFrom<Cupom> for CupomResponse {
+    type Error = String;
+    fn try_from(cupom: Cupom) -> Result<Self, Self::Error> {
+        return Ok( Self {
+            id: cupom.id
+            , code: cupom.code
+            , discount: cupom.discount
+        });
+    }
+}
 
 impl ResponseError for CupomError {
     fn status_code(&self) -> StatusCode {
         match self {
             CupomError::NotFoundError(_) => StatusCode::NOT_FOUND,
-            CupomError::GenericError(_) => StatusCode::BAD_REQUEST,
+            CupomError::ValidationError(_) => StatusCode::BAD_REQUEST,
             CupomError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }
 
 // Same logic to get the full error chain on `Debug` 
-impl std::fmt::Debug for CupomError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return error_chain_fmt(self, f);
-    }
-}
+// impl std::fmt::Debug for CupomError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         return error_chain_fmt(self, f);
+//     }
+// }
