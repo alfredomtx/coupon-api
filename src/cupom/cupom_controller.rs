@@ -17,7 +17,7 @@ pub struct Code { code: String }
 )]
 #[get("cupom")]
 pub async fn get_all_cupoms(pool: web::Data::<MySqlPool>) -> Result<impl Responder, CupomError> {
-    let cupoms = cupom_service::get_all_cupoms(&pool).await?;
+    let cupoms = cupom_service::get_all(&pool).await?;
     return Ok(web::Json(cupoms));
 }
 
@@ -26,7 +26,7 @@ pub async fn get_all_cupoms(pool: web::Data::<MySqlPool>) -> Result<impl Respond
 )]
 #[get("cupom/id")]
 pub async fn get_cupom_by_id(request: web::Json<Id>,  pool: web::Data::<MySqlPool>) -> Result<HttpResponse, CupomError> {
-    let cupom = cupom_service::get_cupom_by_id(request.id, &pool).await?;
+    let cupom = cupom_service::get_by_id(request.id, &pool).await?;
     return Ok(HttpResponse::Ok().json(cupom));
 }
 
@@ -35,7 +35,7 @@ pub async fn get_cupom_by_id(request: web::Json<Id>,  pool: web::Data::<MySqlPoo
 )]
 #[get("cupom/code")]
 pub async fn get_cupom_by_code(request: web::Json<Code>,  pool: web::Data::<MySqlPool>) -> Result<HttpResponse, CupomError> {
-    let cupom = cupom_service::get_cupom_by_code(request.code.clone(), &pool).await?;
+    let cupom = cupom_service::get_by_code(request.code.clone(), &pool).await?;
     return Ok(HttpResponse::Ok().json(cupom));
 }
 
@@ -44,7 +44,7 @@ pub async fn get_cupom_by_code(request: web::Json<Code>,  pool: web::Data::<MySq
 )]
 #[post("cupom")]
 pub async fn add_cupom(request: web::Json<CupomRequest>, pool: web::Data::<MySqlPool>) -> Result<HttpResponse, CupomError> {
-    let cupom = cupom_service::insert_cupom(request, &pool).await?;
+    let cupom = cupom_service::insert(request, &pool).await?;
     return Ok(HttpResponse::Created().json(cupom));
 }
 

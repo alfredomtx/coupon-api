@@ -34,6 +34,7 @@ pub struct DatabaseSettings {
     pub port: u16,
     pub host: String,
     pub database_name: String,
+    pub test_db_name: String,
     // Determine if we demand the connection to be encrypted or not
     pub require_ssl: bool
 }

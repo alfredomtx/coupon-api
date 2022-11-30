@@ -2,6 +2,8 @@ application:
   port: 8000
   
 database:
+  # name of the test database, this database will be created and droped in every test
+  test_db_name: "TEST_RUST"
   host: "127.0.0.1"
   port: 3306
   username: "root"

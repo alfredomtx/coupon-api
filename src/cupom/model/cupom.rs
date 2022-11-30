@@ -4,14 +4,18 @@ use actix_web::{
         StatusCode,
     },
 };
+// use chrono::NaiveDateTime;
 use serde::{Serialize, Deserialize};
-// use crate::helpers::error_chain_fmt;
-
-#[derive(Serialize, Deserialize, Debug)]
+use sqlx::types::chrono::{DateTime, Utc, NaiveDateTime};
+#[derive(Debug)]
 pub struct Cupom {
     pub id: i32,
     pub code: String,
     pub discount: i32,
+    pub max_usage_count: Option<i32>,
+    pub expiration_date: Option<NaiveDateTime>,
+    pub date_created: Option<NaiveDateTime>,
+    pub date_updated: Option<NaiveDateTime>,
 }
 
 #[derive(Deserialize, Debug)]

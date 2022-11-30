@@ -1,4 +1,5 @@
 use sqlx::{MySqlPool, query, query_as};
+use sqlx::types::chrono::{DateTime, Utc, NaiveDateTime};
 
 use super::model::{Cupom, CupomInsert};
 
@@ -20,7 +21,15 @@ pub async fn insert(cupom: CupomInsert, pool: &MySqlPool) -> Result<u64, sqlx::E
 }
 
 pub async fn get_all(pool: &MySqlPool) -> Result<Vec<Cupom>, sqlx::Error> {
-    let cupoms = query_as!(Cupom, r#"SELECT * FROM cupom"#)
+    let cupoms = query_as!(Cupom,
+        r#"SELECT id
+        , code
+        , discount 
+        , max_usage_count
+        , expiration_date as `expiration_date: chrono::NaiveDateTime`
+        , date_created as `date_created: NaiveDateTime`
+        , date_updated as `date_updated: NaiveDateTime`
+        FROM cupom"#)
     .fetch_all(pool)
     .await
     .map_err(|error| {
@@ -51,12 +60,19 @@ pub async fn get_by_field(field: Fields, pool: &MySqlPool) -> Result<Option<Cupo
         }
         Fields::None => {
             return Ok(None);
+            
         }
     }
 
     let cupom = query_as!(Cupom, 
-        r#"
-            SELECT * FROM cupom WHERE ? = ?
+        r#"SELECT id
+        , code
+        , discount 
+        , max_usage_count
+        , expiration_date as `expiration_date: chrono::NaiveDateTime`
+        , date_created as `date_created: NaiveDateTime`
+        , date_updated as `date_updated: NaiveDateTime`
+        FROM cupom WHERE ? = ?
         "#, field_name, field_value
     )
     .fetch_optional(pool)
@@ -72,8 +88,14 @@ pub async fn get_by_field(field: Fields, pool: &MySqlPool) -> Result<Option<Cupo
 
 pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<Option<Cupom>, sqlx::Error> {
     let cupom = query_as!(Cupom, 
-        r#"
-            SELECT * FROM cupom WHERE id = ?
+        r#"SELECT id
+        , code
+        , discount 
+        , max_usage_count
+        , expiration_date as `expiration_date: chrono::NaiveDateTime`
+        , date_created as `date_created: NaiveDateTime`
+        , date_updated as `date_updated: NaiveDateTime`
+        FROM cupom WHERE id = ?
         "#, id
     )
     .fetch_optional(pool)
