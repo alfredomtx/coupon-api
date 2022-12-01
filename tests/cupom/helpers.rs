@@ -1,3 +1,7 @@
+#![allow(unused_parens)]
+
+use std::panic;
+
 use actix_mysql::{
     configuration::{get_configuration, DatabaseSettings},
     telemetry::{get_subscriber, init_subscriber},
@@ -5,8 +9,7 @@ use actix_mysql::{
 };
 use sqlx::{MySqlPool, MySqlConnection, Connection, Executor};
 use once_cell::sync::Lazy;
-use uuid::Uuid;
-use wiremock::MockServer;
+
 
 pub struct TestApp {
     pub address: String,
@@ -15,11 +18,6 @@ pub struct TestApp {
     pub port: u16,
     pub api_client: reqwest::Client,
 }
-
-impl TestApp {
-
-}
-
 
 
 // Ensure that the `tracing` stack is only initialised once using `once_cell`
@@ -89,54 +87,38 @@ pub async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
         .await
         .expect("Failed to connect to database.");
 
+    if (!config.test_db_name.contains("TEST")){
+        panic!("`TEST` string not found in Test Database name, is it correct?");
+    }
+
     let _ = connection
-        .execute(format!(r#"DROP DATABASE {};"#, config.test_db_name).as_str())
-        // .execute(format!(r#"CREATE DATABASE test_rust;"#).as_str())
-        .await;
-    
+        .execute(format!(r#"DROP DATABASE IF EXISTS {};"#, config.test_db_name).as_str())
+        .await
+        .unwrap();
+        
     connection
-        .execute(format!(r#"CREATE DATABASE {};"#, config.test_db_name).as_str())
+        .execute(format!(r#"CREATE DATABASE IF NOT EXISTS {};"#, config.test_db_name).as_str())
         // .execute(format!(r#"CREATE DATABASE test_rust;"#).as_str())
         .await
-        .expect("Failed to create database.");
+        .expect("Failed to create test database.");
     
     // Migrate database
     let connection_pool = MySqlPool::connect_with(config.with_db())
         .await
-        .expect("Failed to connect to database.");
+        .expect("Failed to connect to test database.");
     sqlx::migrate!("./migrations")
         .run(&connection_pool)
         .await
-        .expect("Failed to migrate the database.");
+        .expect("Failed to migrate the test database.");
 
     return connection_pool;
 }
 
 /// Cleans up databases created during testing
+#[allow(dead_code)]
 pub async fn drop_test_database(pool: &MySqlPool, db_name: &str) {
-    sqlx::query(format!("DROP DATABASE {}", db_name).as_str())
+    sqlx::query(format!("DROP DATABASE IF EXISTS {}", db_name).as_str())
     .execute(pool)
     .await
     .unwrap();
-
-    // let mut connection = MySqlConnection::connect_with(&config.without_db())
-    //     .await
-    //     .expect("Failed to connect to database.");
-
-    // connection
-    //     .execute(
-    //         format!(
-    //             r#"select pg_terminate_backend(pid) from pg_stat_activity where datname='{}';"#,
-    //             name
-    //         )
-    //         .as_str(),
-    //     )
-    //     .await
-    //     .expect("Failed to terminate database connection");
-
-
-    // connection
-    //     .execute(format!(r#"DROP DATABASE {};"#, name).as_str())
-    //     .await
-    //     .expect("Failed to drop database");
 }

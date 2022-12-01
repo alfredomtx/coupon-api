@@ -6,7 +6,7 @@ use actix_web::{
 };
 // use chrono::NaiveDateTime;
 use serde::{Serialize, Deserialize};
-use sqlx::types::chrono::{DateTime, Utc, NaiveDateTime};
+use sqlx::types::chrono::{NaiveDateTime};
 #[derive(Debug)]
 pub struct Cupom {
     pub id: i32,

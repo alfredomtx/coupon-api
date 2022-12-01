@@ -1,5 +1,16 @@
-use crate::helpers::{drop_test_database, spawn_app};
+use crate::helpers::{spawn_app};
 
+
+
+// #[tokio::test]
+// async fn always_fails() {
+//     // Arrange
+//     let app = spawn_app().await;
+
+//     run_test(|| {
+//         assert!(false, "test error for validation...!");
+//     }, &app.db_pool, &app.db_name ).await;
+// }
 
 #[tokio::test]
 async fn health_check_works() {
@@ -12,8 +23,6 @@ async fn health_check_works() {
         .send()
         .await
         .expect("Failed to execute request.");
-
-    drop_test_database(&app.db_pool, &app.db_name).await;
 
     // Assert
     assert!(response.status().is_success());

@@ -1,5 +1,5 @@
 use sqlx::{MySqlPool, query, query_as};
-use sqlx::types::chrono::{DateTime, Utc, NaiveDateTime};
+use sqlx::types::chrono::{NaiveDateTime};
 
 use super::model::{Cupom, CupomInsert};
 
@@ -26,7 +26,7 @@ pub async fn get_all(pool: &MySqlPool) -> Result<Vec<Cupom>, sqlx::Error> {
         , code
         , discount 
         , max_usage_count
-        , expiration_date as `expiration_date: chrono::NaiveDateTime`
+        , expiration_date as `expiration_date: NaiveDateTime`
         , date_created as `date_created: NaiveDateTime`
         , date_updated as `date_updated: NaiveDateTime`
         FROM cupom"#)
