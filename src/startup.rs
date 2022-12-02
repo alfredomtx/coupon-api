@@ -33,10 +33,10 @@ pub struct Application {
 pub struct ApplicationBaseUrl(pub String);
 
 impl Application {
-    // We have converted the `build` function into a constructor for `Application`
-    pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
 
-        let connection_pool = get_connection_pool(&configuration.database);
+    pub async fn build(configuration: Settings, test_database: bool) -> Result<Self, std::io::Error> {
+
+        let connection_pool = get_connection_pool(&configuration.database, test_database);
 
         let address = format!("{}:{}"
             , configuration.application.host, configuration.application.port
@@ -70,10 +70,10 @@ impl Application {
     
 }
 
-pub fn get_connection_pool(configuration: &DatabaseSettings) -> MySqlPool {
+pub fn get_connection_pool(configuration: &DatabaseSettings, test_database: bool) -> MySqlPool {
     return MySqlPoolOptions::new()
     .acquire_timeout(std::time::Duration::from_secs(2))
-    .connect_lazy_with(configuration.with_db());
+    .connect_lazy_with(configuration.with_db(test_database));
 }
 
 pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String) -> Result<Server, std::io::Error> {

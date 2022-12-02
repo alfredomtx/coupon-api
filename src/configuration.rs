@@ -49,9 +49,10 @@ impl DatabaseSettings {
             .ssl_mode(MySqlSslMode::Disabled)
     }
 
-    pub fn with_db(&self) -> MySqlConnectOptions {
-        let options = self.without_db().database(&self.database_name);
-        options
+    pub fn with_db(&self, test_database: bool) -> MySqlConnectOptions {
+        let options = self.without_db()
+            .database(if (test_database) { &self.test_db_name } else {&self.database_name} );
+        return options;
     }
 }
 

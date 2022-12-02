@@ -6,10 +6,10 @@ use super::model::{Cupom, CupomInsert};
 pub async fn insert(cupom: CupomInsert, pool: &MySqlPool) -> Result<u64, sqlx::Error> {
     let result = query!(
         r#"
-            INSERT INTO cupom (code, discount)
-            VALUES (?, ?)
+            INSERT INTO cupom (code, discount, max_usage_count)
+            VALUES (?, ?, ?)
         "#,
-        cupom.code, cupom.discount
+        cupom.code, cupom.discount, cupom.max_usage_count
     )
     .execute(pool)
     .await

@@ -52,6 +52,7 @@ pub async fn insert(cupom: Json<CupomRequest>, pool: &MySqlPool) -> Result<Cupom
     let cupom_insert = CupomInsert {
         code: cupom.code.to_string(),
         discount: cupom.discount,
+        max_usage_count: cupom.max_usage_count
     };
 
     let inserted_id = cupom_repository::insert(cupom_insert, pool).await

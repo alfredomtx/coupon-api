@@ -1,4 +1,7 @@
 
+
+#![allow(unused_parens)]
+
 pub mod cupom;
 pub mod configuration;
 pub mod helpers;

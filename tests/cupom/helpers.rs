@@ -1,4 +1,4 @@
-#![allow(unused_parens)]
+
 
 use std::panic;
 
@@ -19,10 +19,21 @@ pub struct TestApp {
     pub api_client: reqwest::Client,
 }
 
+impl TestApp {
+    pub async fn post_cupom(&self, body: serde_json::Value) -> reqwest::Response {
+    return self.api_client
+        .post(&format!("{}/cupom", &self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request");
+    }
+}
+
 
 // Ensure that the `tracing` stack is only initialised once using `once_cell`
 static TRACING: Lazy<()> = Lazy::new(|| {
-    let default_filter_level = "info".to_string();
+    let default_filter_level = "trace".to_string();
     let subscriber_name = "test".to_string();
 
     // We cannot assign the output of `get_subscriber` to a variable based on the value
@@ -55,7 +66,7 @@ pub async fn spawn_app() -> TestApp {
     configure_test_database(&configuration.database).await;
 
     // Launch the application as a background task
-    let application = Application::build(configuration.clone())
+    let application = Application::build(configuration.clone(), true)
         .await
         .expect("Failed to build application.");
     let application_port = application.port();
@@ -74,7 +85,7 @@ pub async fn spawn_app() -> TestApp {
     let test_app = TestApp {
         address,
         port: application_port,
-        db_pool: get_connection_pool(&configuration.database),
+        db_pool: get_connection_pool(&configuration.database, true),
         db_name: configuration.database.test_db_name,
         api_client: client,
     };
@@ -103,13 +114,13 @@ pub async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
         .expect("Failed to create test database.");
     
     // Migrate database
-    let connection_pool = MySqlPool::connect_with(config.with_db())
+    let connection_pool = MySqlPool::connect_with(config.with_db(true))
         .await
         .expect("Failed to connect to test database.");
-    sqlx::migrate!("./migrations")
+    let _ = sqlx::migrate!("./migrations")
         .run(&connection_pool)
-        .await
-        .expect("Failed to migrate the test database.");
+        .await;
+        // .expect("Failed to migrate the test database.");
 
     return connection_pool;
 }

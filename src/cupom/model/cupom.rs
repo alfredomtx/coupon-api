@@ -20,14 +20,16 @@ pub struct Cupom {
 
 #[derive(Deserialize, Debug)]
 pub struct CupomInsert {
-   pub code: String,
-   pub discount: i32,
+    pub code: String,
+    pub discount: i32,
+    pub max_usage_count: Option<i32>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CupomRequest {
-   pub code: String,
-   pub discount: i32,
+    pub code: String,
+    pub discount: i32,
+    pub max_usage_count: Option<i32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -35,6 +37,7 @@ pub struct CupomResponse {
     pub id: i32,
     pub code: String,
     pub discount: i32,
+    pub max_usage_count: Option<i32>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -55,6 +58,7 @@ impl CupomInsert {
         return CupomInsert {
             code: cupom.code
             , discount: cupom.discount
+            , max_usage_count: cupom.max_usage_count
         };
     }
 }
@@ -67,6 +71,7 @@ impl TryFrom<Cupom> for CupomResponse {
             id: cupom.id
             , code: cupom.code
             , discount: cupom.discount
+            , max_usage_count: cupom.max_usage_count
         });
     }
 }
