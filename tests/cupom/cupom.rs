@@ -65,7 +65,6 @@ async fn cupom_returns_400_for_invalid_data() {
     }
 }
 
-
 fn get_cupom_request_body() -> serde_json::Value {
     return serde_json::json!({
         "code": "TestCupom",

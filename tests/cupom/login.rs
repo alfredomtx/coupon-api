@@ -1,13 +1,13 @@
 use crate::helpers::{spawn_app};
 
 #[tokio::test]
-async fn health_check_works() {
+async fn login_returns_a_jwt_token() {
     // Arrange
     let app = spawn_app().await;
 
     // Act
     let response = app.api_client
-        .get(&format!("{}/health_check", &app.address))
+        .get(&format!("{}/login", &app.address))
         .send()
         .await
         .expect("Failed to execute request.");

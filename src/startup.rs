@@ -1,5 +1,8 @@
 use crate::{
     configuration::{DatabaseSettings, Settings},
+    login::{
+        login_handler
+    },
     cupom::{
         get_cupom_by_code,
         get_cupom_by_id,
@@ -77,6 +80,7 @@ pub fn get_connection_pool(configuration: &DatabaseSettings, test_database: bool
 }
 
 pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String) -> Result<Server, std::io::Error> {
+
     let db_pool = Data::new(db_pool);
     let base_url = Data::new(ApplicationBaseUrl(base_url));
     let server = HttpServer::new(move || {
@@ -88,6 +92,7 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String) -> Resul
             .service(get_cupom_by_code)
             .service(get_all_cupoms)
             .service(add_cupom )
+            .service(login_handler )
             .app_data(db_pool.clone())
             .app_data(base_url.clone())
     })

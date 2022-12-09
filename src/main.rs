@@ -8,6 +8,8 @@ use actix_mysql::{
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    std::env::set_var("RUST_LOG", "actix_web=debug");
+    
     // initializing subscriber for tracing & telemetry stuff
     let subscriber = get_subscriber("cupom_api".into(), "info".into(), std::io::stdout);
     init_subscriber(subscriber);
