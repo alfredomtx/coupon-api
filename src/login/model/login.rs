@@ -13,11 +13,6 @@ pub struct LoginRequest {
     pub password: String,
 }
 
-#[derive(Serialize, Debug)]
-pub struct LoginResponse {
-    pub token: String,
-}
-
 #[derive(thiserror::Error, Debug)]
 pub enum LoginError {
     // #[error("Not found.)]
