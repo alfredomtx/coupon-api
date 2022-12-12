@@ -9,8 +9,7 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Deserialize, Debug)]
 pub struct LoginRequest {
-    pub email: String,
-    pub password: String,
+    pub api_key: String,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -19,7 +18,7 @@ pub enum LoginError {
     // NotFoundError,
     #[error("Not found.")]
     NotFoundError(#[source] anyhow::Error),
-    #[error("Invalid credentials.")]
+    #[error("Invalid api key.")]
     AuthorizationError(#[source] anyhow::Error),
     #[error(transparent)]
     UnexpectedError(#[from] anyhow::Error),

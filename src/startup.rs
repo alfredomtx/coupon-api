@@ -1,7 +1,7 @@
 use crate::{
     configuration::{DatabaseSettings, Settings},
     login::{
-        UserClaims, hello, verify_service_request, login_handler
+        UserClaims, hello, verify_service_request, authenticate
     },
     cupom::{
         get_cupom_by_code,
@@ -35,6 +35,7 @@ pub struct Application {
 // Retrieval from the context, in actix-web, is type-based: using
 // a raw `String` would expose us to conflicts.
 pub struct ApplicationBaseUrl(pub String);
+pub struct ApplicationApiKey(pub String);
 
 impl Application {
 
@@ -54,6 +55,7 @@ impl Application {
             listener,
             connection_pool,
             configuration.application.base_url,
+            configuration.application.api_key,
         )?;
 
 
@@ -80,12 +82,14 @@ pub fn get_connection_pool(configuration: &DatabaseSettings, test_database: bool
     .connect_lazy_with(configuration.with_db(test_database));
 }
 
-pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String) -> Result<Server, std::io::Error> {
+pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key: String) -> Result<Server, std::io::Error> {
     // we initialize a new Authority passing the underling type the JWT token should destructure into.
     let auth_authority = Authority::<UserClaims>::default();
     
     let db_pool = Data::new(db_pool);
     let base_url = Data::new(ApplicationBaseUrl(base_url));
+    let api_key = Data::new(ApplicationApiKey(api_key));
+
     let server = HttpServer::new(move || {
         App::new()
             // TracingLogger instead of default actix_web logger to return with request_id (and other information aswell)
@@ -94,6 +98,7 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String) -> Resul
             .app_data(Data::new(auth_authority.clone()))
             .app_data(db_pool.clone())
             .app_data(base_url.clone())
+            .app_data(api_key.clone())
 
             /*
                 all access routes 
@@ -107,14 +112,11 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String) -> Resul
             )))
             .service(health_check)
             /*
-                authenticated routes - admin
+                authenticated routes
             */ 
-            .service(scope("").service(login_handler).wrap(AuthService::new(
+            .service(scope("").service(authenticate).wrap(AuthService::new(
                 auth_authority.clone(), verify_service_request,
             )))
-            /*
-                authenticated routes - user
-            */ 
             .service(get_cupom_by_id)
             .service(get_cupom_by_code)
             .service(get_all_cupoms)
