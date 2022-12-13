@@ -1,25 +1,42 @@
 use crate::helpers::{spawn_app};
 
 #[tokio::test]
-async fn requests_missing_authorization_are_rejected() {
+async fn requests_missing_cookie_are_rejected() {
     // Arrange
     let app = spawn_app().await;
 
-    // Act''
+    // Act
     let response = reqwest::Client::new()
-        .post(&format!("{}/newsletters", &app.address))
-        .json(&serde_json::json!({
-            "title": "Newsletter title",
-            "content": {
-            "text": "Newsletter body as plain text",
-            "html": "<p>Newsletter body as HTML</p>",
-        }
-    }))
-    .send()
-    .await
-    .expect("Failed to execute request.");
+        .get(&format!("{}/cupom", &app.address))
+        .send()
+        .await
+        .expect("Failed to execute request.");
 
     // Assert
     assert_eq!(401, response.status().as_u16());
-    assert_eq!(r#"Basic realm="publish""#, response.headers()["WWW-Authenticate"]);
+}
+
+#[tokio::test]
+async fn authenticate_returns_a_valid_cookie() {
+    // Arrange
+    let app = spawn_app().await;
+
+    // Act
+    let response = app.authenticate_request().await;
+
+    assert_eq!(202, response.status().as_u16());
+    
+    let cookie =  response.headers().get("Set-Cookie").unwrap().to_str().unwrap();
+    let unsecure_cookie = cookie.replace(" Secure", "");
+
+    // Act
+    let response = reqwest::Client::new()
+        .get(&format!("{}/hello", &app.address))
+        .header("Cookie", unsecure_cookie)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    // Assert
+    assert_eq!(200, response.status().as_u16());
 }

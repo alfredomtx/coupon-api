@@ -1,5 +1,3 @@
-
-
 use std::panic;
 
 use actix_mysql::{
@@ -17,16 +15,30 @@ pub struct TestApp {
     pub db_name: String,
     pub port: u16,
     pub api_client: reqwest::Client,
+    pub api_key: String,
+    pub cookie: String,
 }
 
 impl TestApp {
     pub async fn post_cupom(&self, body: serde_json::Value) -> reqwest::Response {
-    return self.api_client
-        .post(&format!("{}/cupom", &self.address))
+        return self.api_client
+            .post(&format!("{}/cupom", &self.address))
+            .header("Cookie", &self.cookie)
             .json(&body)
             .send()
             .await
             .expect("Failed to execute request");
+    }
+
+    pub async fn authenticate_request(&self) -> reqwest::Response {
+        return self.api_client
+        .post(&format!("{}/authenticate", &self.address))
+        .json(&serde_json::json!({
+            "api_key": &self.api_key
+        }))
+        .send()
+        .await
+        .expect("Failed to execute request.");
     }
 }
 
@@ -75,21 +87,34 @@ pub async fn spawn_app() -> TestApp {
     let address = format!("http://127.0.0.1:{}", application.port());
     let _ = tokio::spawn(application.run_until_stopped());
 
+    let response = reqwest::Client::new()
+        .post(&format!("{}/authenticate", &address))
+        .json(&serde_json::json!({
+            "api_key": &configuration.application.api_key
+        }))
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    
+    let cookie =  response.headers().get("Set-Cookie").unwrap().to_str().unwrap();
+    let unsecure_cookie = cookie.replace(" Secure", "");
+
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
+        .cookie_store(true)
         .build()
         .unwrap();
 
-
-    // We return the application address to the caller
-    let test_app = TestApp {
+    return TestApp {
         address,
         port: application_port,
         db_pool: get_connection_pool(&configuration.database, true),
         db_name: configuration.database.test_db_name,
         api_client: client,
+        api_key: configuration.application.api_key,
+        cookie: unsecure_cookie,
     };
-    return test_app;
 }
 
 pub async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
@@ -123,13 +148,4 @@ pub async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
         // .expect("Failed to migrate the test database.");
 
     return connection_pool;
-}
-
-/// Cleans up databases created during testing
-#[allow(dead_code)]
-pub async fn drop_test_database(pool: &MySqlPool, db_name: &str) {
-    sqlx::query(format!("DROP DATABASE IF EXISTS {}", db_name).as_str())
-    .execute(pool)
-    .await
-    .unwrap();
 }

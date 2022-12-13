@@ -25,7 +25,7 @@ fake = "~2.3"
 
 [dependencies]
 # runtime
-actix-web = "4.1.0"
+actix-web = "4.2.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 mysql = "23.0.0"
 
@@ -35,7 +35,6 @@ anyhow = "1.0.65"
 #serde
 serde_json = "1"
 serde = "1.0.147"
-serde-aux = "3.1.0"
 # tracing crates
 tracing = {version = "0.1.35", features = ["log"]}
 tracing-log = "0.1.3"
@@ -49,8 +48,11 @@ secrecy = { version = "0.8.0", features = ["serde"] }
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls", "cookies"] }
 uuid = { version = "1.1.2", features = ["v4"] }
 chrono = "0.4.23"
-actix-jwt-auth-middleware = "0.1.2"
 argon2 = {version = "0.4.1", features = ["std"]}
+
+# JWT and authorization
+actix-jwt-auth-middleware = "0.2.0"
+jwt-compact = "0.6.0"
 
 
 [dependencies.sqlx]

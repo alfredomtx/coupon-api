@@ -48,12 +48,7 @@ async fn cupom_returns_400_for_invalid_data() {
 
     // Act 
     for (invalid_body, error_message) in test_cases {
-        let response = reqwest::Client::new()
-            .post(&format!("{}/cupom", &app.address))
-            .json(&invalid_body)
-            .send()
-            .await
-            .expect("Failed to execute request.");
+        let response = app.post_cupom(invalid_body).await;
 
         // Assert
         assert_eq!(

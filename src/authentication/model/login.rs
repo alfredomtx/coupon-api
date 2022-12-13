@@ -1,11 +1,9 @@
 
 use actix_web::{ 
     ResponseError,
-    http:: {
-        StatusCode,
-    },
+    http:: {StatusCode},
 };
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize};
 
 #[derive(Deserialize, Debug)]
 pub struct LoginRequest {

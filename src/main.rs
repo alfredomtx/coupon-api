@@ -1,4 +1,5 @@
 #![allow(unused_parens)]
+#![allow(clippy::needless_return)]
 
 use actix_mysql::{
     configuration::{get_configuration},

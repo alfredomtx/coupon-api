@@ -1,5 +1,6 @@
 application:
   port: 8000
+  api_key: "test123"
   
 database:
   # name of the test database, this database will be created and droped in every test

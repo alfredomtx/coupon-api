@@ -1,20 +1,17 @@
 use crate::{
     configuration::{DatabaseSettings, Settings},
-    login::{
-        UserClaims, hello, verify_service_request, authenticate
+    authentication::{
+        UserClaims, hello, verify_request, authenticate, login_handler
     },
     cupom::{
-        get_cupom_by_code,
-        get_cupom_by_id,
-        get_all_cupoms,
-        add_cupom,
+        get_cupom_by_code, get_cupom_by_id, get_all_cupoms, add_cupom,
     },
     routes::{health_check},
 };
 use actix_web::{
     App, HttpServer,
     dev::Server, 
-    web::{Data, self, scope},
+    web::{Data, scope},
 };
 use sqlx::{
     MySqlPool,
@@ -22,7 +19,9 @@ use sqlx::{
 };
 use tracing_actix_web::TracingLogger;
 use std::net::TcpListener;
-use actix_jwt_auth_middleware::{AuthError, AuthService, Authority, FromRequest};
+use actix_jwt_auth_middleware::{AuthResult, Authority, CookieSigner, FromRequest, UseJWTOnScope};
+use exonum_crypto::KeyPair;
+use jwt_compact::alg::Ed25519;
 
 
 pub struct Application {
@@ -40,7 +39,6 @@ pub struct ApplicationApiKey(pub String);
 impl Application {
 
     pub async fn build(configuration: Settings, test_database: bool) -> Result<Self, std::io::Error> {
-
         let connection_pool = get_connection_pool(&configuration.database, test_database);
 
         let address = format!("{}:{}"
@@ -83,8 +81,18 @@ pub fn get_connection_pool(configuration: &DatabaseSettings, test_database: bool
 }
 
 pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key: String) -> Result<Server, std::io::Error> {
-    // we initialize a new Authority passing the underling type the JWT token should destructure into.
-    let auth_authority = Authority::<UserClaims>::default();
+    let key_pair = KeyPair::random();
+
+    let cookie_signer = CookieSigner::new()
+        .signing_key(key_pair.secret_key().clone())
+        .algorithm(Ed25519)
+        .build()?;
+
+    let authority = Authority::<User, _, _, _>::new()
+        .refresh_authorizer(|| async move { Ok(()) })
+        .cookie_signer(Some(cookie_signer.clone()))
+        .verifying_key(key_pair.public_key().clone())
+        .build()?;
     
     let db_pool = Data::new(db_pool);
     let base_url = Data::new(ApplicationBaseUrl(base_url));
@@ -95,32 +103,35 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
             // TracingLogger instead of default actix_web logger to return with request_id (and other information aswell)
             .wrap(TracingLogger::default())
 
-            .app_data(Data::new(auth_authority.clone()))
+            .app_data(Data::new(authority.clone()))
             .app_data(db_pool.clone())
             .app_data(base_url.clone())
             .app_data(api_key.clone())
+            .app_data(Data::new(cookie_signer.clone()))
 
             /*
-                all access routes 
+                all access routes (not authenticated)
             */ 
-            // in order to wrap the entire app scope excluding the login handlers we have add a new service
-            // with an empty scope first
-            .service(scope("").service(hello).wrap(AuthService::new(
-                auth_authority.clone(),
-                // we pass the guard function to use with this auth service
-                verify_service_request,
-            )))
             .service(health_check)
+            .service(login_handler)
+            .service(authenticate)
+            .service(get_cupom_by_id)
+            .service(get_cupom_by_code)
+            .service(add_cupom)
+
             /*
                 authenticated routes
             */ 
-            .service(scope("").service(authenticate).wrap(AuthService::new(
-                auth_authority.clone(), verify_service_request,
-            )))
-            .service(get_cupom_by_id)
-            .service(get_cupom_by_code)
+            // in order to wrap the entire app scope excluding the login handlers we have add a new service
+            // with an empty scope first
+            .service(
+                // we need this scope so we can exclude the login service
+                // from being wrapped by the jwt middleware
+                scope("")
+                    .service(hello)
+                    .use_jwt(authority.clone())
+                )
             .service(get_all_cupoms)
-            .service(add_cupom )
 
 
     })
