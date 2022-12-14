@@ -28,6 +28,16 @@ impl TestApp {
             .await
             .expect("Failed to execute request");
     }
+    
+    pub async fn get_coupon(&self, endpoint: &str, body: serde_json::Value) -> reqwest::Response {
+        return self.api_client
+            .get(&format!("{}/coupon{}", &self.address, endpoint))
+            .header("Cookie", &self.cookie)
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request");
+    }
 
     pub async fn authenticate_request(&self) -> reqwest::Response {
         return self.api_client
@@ -86,6 +96,8 @@ pub async fn spawn_app() -> TestApp {
     let address = format!("http://127.0.0.1:{}", application.port());
     let _ = tokio::spawn(application.run_until_stopped());
 
+    // TODO: refactor this
+    // get the cookie with JWT to use in the requests.
     let response = reqwest::Client::new()
         .post(&format!("{}/authenticate", &address))
         .json(&serde_json::json!({
@@ -93,10 +105,10 @@ pub async fn spawn_app() -> TestApp {
         }))
         .send()
         .await
-        .expect("Failed to execute request.");
+        .expect("Failed to execute `/authenticate` request.");
 
-    
     let cookie =  response.headers().get("Set-Cookie").unwrap().to_str().unwrap();
+    // remove the " Secure" tag from the cookies, since in localhost I'm not using HTTPS
     let unsecure_cookie = cookie.replace(" Secure", "");
 
     let client = reqwest::Client::builder()
@@ -144,7 +156,7 @@ pub async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
     let _ = sqlx::migrate!("./migrations")
         .run(&connection_pool)
         .await;
-        // .expect("Failed to migrate the test database.");
+        // no .expect() here because we dont want a panic if the migration fails
 
     return connection_pool;
 }

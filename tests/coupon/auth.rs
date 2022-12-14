@@ -24,7 +24,7 @@ async fn authenticate_returns_a_valid_cookie() {
     // Act
     let response = app.authenticate_request().await;
 
-    assert_eq!(202, response.status().as_u16());
+    assert_eq!(200, response.status().as_u16());
     
     let cookie =  response.headers().get("Set-Cookie").unwrap().to_str().unwrap();
     let unsecure_cookie = cookie.replace(" Secure", "");

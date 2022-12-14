@@ -6,8 +6,10 @@ use super::model::{Coupon, CouponInsert};
 pub async fn insert(coupon: CouponInsert, pool: &MySqlPool) -> Result<u64, sqlx::Error> {
     let result = query!(
         r#"
-            INSERT INTO coupon (code, discount, max_usage_count)
-            VALUES (?, ?, ?)
+            INSERT INTO coupon 
+            (code, discount, max_usage_count) 
+            VALUES 
+            (?, ?, ?)
         "#,
         coupon.code, coupon.discount, coupon.max_usage_count
     )
@@ -60,7 +62,6 @@ pub async fn get_by_field(field: Fields, pool: &MySqlPool) -> Result<Option<Coup
         }
         Fields::None => {
             return Ok(None);
-            
         }
     }
 
@@ -107,4 +108,3 @@ pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<Option<Coupon>, sqlx
 
     return Ok(coupon);
 }
-

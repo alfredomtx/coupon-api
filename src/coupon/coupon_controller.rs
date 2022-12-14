@@ -26,7 +26,7 @@ pub async fn get_all_coupons(pool: Data::<MySqlPool>) -> Result<impl Responder, 
     name = "Get coupon by id", skip(pool)
 )]
 #[get("/coupon/id")]
-pub async fn get_coupon_by_id(request: web::Json<Id>,  pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
+pub async fn get_coupon_by_id(request: web::Json<Id>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
     let coupon = coupon_service::get_by_id(request.id, &pool).await?;
     return Ok(HttpResponse::Ok().json(coupon));
 }
@@ -35,7 +35,7 @@ pub async fn get_coupon_by_id(request: web::Json<Id>,  pool: Data::<MySqlPool>) 
     name = "Get coupon by code", skip(pool)
 )]
 #[get("/coupon/code")]
-pub async fn get_coupon_by_code(request: web::Json<Code>,  pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
+pub async fn get_coupon_by_code(request: web::Json<Code>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
     let coupon = coupon_service::get_by_code(request.code.clone(), &pool).await?;
     return Ok(HttpResponse::Ok().json(coupon));
 }

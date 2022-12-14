@@ -59,6 +59,7 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
                 all access routes (not authenticated)
             */ 
             .service(authenticate)
+            .service(health_check)
 
             /*
                 authenticated routes
@@ -70,7 +71,6 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
                 // from being wrapped by the jwt middleware
                 scope("")
                     .service(hello)
-                    .service(health_check)
                     .service(get_all_coupons)
                     .service(get_coupon_by_id)
                     .service(get_coupon_by_code)
