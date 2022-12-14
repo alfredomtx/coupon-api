@@ -26,7 +26,7 @@ impl TestApp {
             .json(&body)
             .send()
             .await
-            .expect("Failed to execute request");
+        .expect("Failed to execute request");
     }
     
     pub async fn get_coupon(&self, endpoint: &str, body: serde_json::Value) -> reqwest::Response {
@@ -36,7 +36,7 @@ impl TestApp {
             .json(&body)
             .send()
             .await
-            .expect("Failed to execute request");
+        .expect("Failed to execute request");
     }
 
     pub async fn authenticate_request(&self) -> reqwest::Response {

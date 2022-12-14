@@ -704,6 +704,7 @@ dependencies = [
  "jwt-compact",
  "mysql",
  "once_cell",
+ "rand",
  "reqwest",
  "secrecy",
  "serde",

@@ -1,36 +1,39 @@
 
+use coupon_api::coupon::{Coupon};
 use crate::helpers::{spawn_app};
+use rand::distributions::{Alphanumeric, DistString};
 
 #[tokio::test]
 async fn post_persists_and_returns_the_new_coupon() {
     // Arrange
     let app = spawn_app().await;
-    let body = get_coupon_request_body("aa");
+    // generating a random string
+    let code = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+    let body = get_coupon_request_body(Some(code.clone()));
     
     // Act
     let response = app.post_coupon(body).await;
     let response_status = response.status().as_u16();
-
-    let _payload = response.text()
+    let response_body = response.text()
         .await
-        .expect("failed to get payload");
-    
-    assert_eq!(201, response_status);
-    println!("{}", _payload);
+        .expect("failed to get response_body");
 
     // Assert
-    // assert_eq!(saved.code, "TestCoupon");
-    // assert_eq!(saved.discount, 10);
-    // assert_eq!(saved.max_usage_count, Some(2));
-    // assert_eq!(saved.expiration_date, Some(NaiveDateTime::from_str("31/12/2030 00:00:00").unwrap()));
-}
+    assert_eq!(201, response_status);
 
+    let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
+    
+    assert_eq!(coupon.code, code);
+    assert_eq!(coupon.discount, 10);
+    assert_eq!(coupon.max_usage_count, Some(2));
+    // assert_eq!(coupon.expiration_date, Some(NaiveDateTime::from_str("31/12/2030 00:00:00").unwrap()));
+}
 
 #[tokio::test]
 async fn post_persists_the_new_coupon() {
     // Arrange
     let app = spawn_app().await;
-    let body = get_coupon_request_body("");
+    let body = get_coupon_request_body(None);
     
     // Act
     let response = app.post_coupon(body).await;
@@ -113,9 +116,14 @@ async fn coupon_not_found_returns_404(){
     }
 }
 
-fn get_coupon_request_body(str: &str) -> serde_json::Value {
+fn get_coupon_request_body(code: Option<String>) -> serde_json::Value {
+    let coupon_code;
+    match code {
+        Some(code) => coupon_code = code,
+        None => coupon_code = "TestCoupon".to_string()
+    };
     return serde_json::json!({
-        "code": format!("TestCoupon{}", str),
+        "code": coupon_code,
         "discount": 10,
         "max_usage_count": 2,
         // "expiration_date": "31/12/2030 00:00:00",

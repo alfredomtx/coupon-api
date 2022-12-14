@@ -7,7 +7,7 @@ use actix_web::{
 // use chrono::NaiveDateTime;
 use serde::{Serialize, Deserialize};
 use sqlx::types::chrono::{NaiveDateTime};
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct Coupon {
     pub id: i32,
     pub code: String,
