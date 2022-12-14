@@ -1,7 +1,7 @@
 
 #![allow(unused_parens)]
 
-mod cupom;
+mod coupon;
 mod auth;
 mod helpers;
 mod health_check;

@@ -1,7 +1,7 @@
 #![allow(unused_parens)]
 #![allow(clippy::needless_return)]
 
-use actix_mysql::{
+use coupon_api::{
     configuration::{get_configuration},
     startup::Application,
     telemetry::{get_subscriber, init_subscriber},
@@ -10,7 +10,7 @@ use actix_mysql::{
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     // initializing subscriber for tracing & telemetry stuff
-    let subscriber = get_subscriber("cupom_api".into(), "info".into(), std::io::stdout);
+    let subscriber = get_subscriber("coupon_api".into(), "info".into(), std::io::stdout);
     init_subscriber(subscriber);
 
     let configuration = get_configuration().expect("Failed to read configuration.");

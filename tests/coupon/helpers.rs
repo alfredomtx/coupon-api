@@ -1,13 +1,12 @@
 use std::panic;
 
-use actix_mysql::{
+use coupon_api::{
     configuration::{get_configuration, DatabaseSettings},
     telemetry::{get_subscriber, init_subscriber},
     startup::{get_connection_pool, Application},
 };
 use sqlx::{MySqlPool, MySqlConnection, Connection, Executor};
 use once_cell::sync::Lazy;
-
 
 pub struct TestApp {
     pub address: String,
@@ -20,9 +19,9 @@ pub struct TestApp {
 }
 
 impl TestApp {
-    pub async fn post_cupom(&self, body: serde_json::Value) -> reqwest::Response {
+    pub async fn post_coupon(&self, body: serde_json::Value) -> reqwest::Response {
         return self.api_client
-            .post(&format!("{}/cupom", &self.address))
+            .post(&format!("{}/coupon", &self.address))
             .header("Cookie", &self.cookie)
             .json(&body)
             .send()

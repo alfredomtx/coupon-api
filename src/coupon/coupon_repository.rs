@@ -1,15 +1,15 @@
 use sqlx::{MySqlPool, query, query_as};
 use sqlx::types::chrono::{NaiveDateTime};
 
-use super::model::{Cupom, CupomInsert};
+use super::model::{Coupon, CouponInsert};
 
-pub async fn insert(cupom: CupomInsert, pool: &MySqlPool) -> Result<u64, sqlx::Error> {
+pub async fn insert(coupon: CouponInsert, pool: &MySqlPool) -> Result<u64, sqlx::Error> {
     let result = query!(
         r#"
-            INSERT INTO cupom (code, discount, max_usage_count)
+            INSERT INTO coupon (code, discount, max_usage_count)
             VALUES (?, ?, ?)
         "#,
-        cupom.code, cupom.discount, cupom.max_usage_count
+        coupon.code, coupon.discount, coupon.max_usage_count
     )
     .execute(pool)
     .await
@@ -20,8 +20,8 @@ pub async fn insert(cupom: CupomInsert, pool: &MySqlPool) -> Result<u64, sqlx::E
     return Ok(result.last_insert_id());
 }
 
-pub async fn get_all(pool: &MySqlPool) -> Result<Vec<Cupom>, sqlx::Error> {
-    let cupoms = query_as!(Cupom,
+pub async fn get_all(pool: &MySqlPool) -> Result<Vec<Coupon>, sqlx::Error> {
+    let coupons = query_as!(Coupon,
         r#"SELECT id
         , code
         , discount 
@@ -29,7 +29,7 @@ pub async fn get_all(pool: &MySqlPool) -> Result<Vec<Cupom>, sqlx::Error> {
         , expiration_date as `expiration_date: NaiveDateTime`
         , date_created as `date_created: NaiveDateTime`
         , date_updated as `date_updated: NaiveDateTime`
-        FROM cupom"#)
+        FROM coupon"#)
     .fetch_all(pool)
     .await
     .map_err(|error| {
@@ -37,7 +37,7 @@ pub async fn get_all(pool: &MySqlPool) -> Result<Vec<Cupom>, sqlx::Error> {
         error
     })?;
 
-   return Ok(cupoms);
+   return Ok(coupons);
 }
 
 pub enum Fields {
@@ -46,7 +46,7 @@ pub enum Fields {
     None,
 }
 
-pub async fn get_by_field(field: Fields, pool: &MySqlPool) -> Result<Option<Cupom>, sqlx::Error> {
+pub async fn get_by_field(field: Fields, pool: &MySqlPool) -> Result<Option<Coupon>, sqlx::Error> {
     let field_name: String;
     let field_value: String;
     match field {
@@ -64,7 +64,7 @@ pub async fn get_by_field(field: Fields, pool: &MySqlPool) -> Result<Option<Cupo
         }
     }
 
-    let cupom = query_as!(Cupom, 
+    let coupon = query_as!(Coupon, 
         r#"SELECT id
         , code
         , discount 
@@ -72,7 +72,7 @@ pub async fn get_by_field(field: Fields, pool: &MySqlPool) -> Result<Option<Cupo
         , expiration_date as `expiration_date: chrono::NaiveDateTime`
         , date_created as `date_created: NaiveDateTime`
         , date_updated as `date_updated: NaiveDateTime`
-        FROM cupom WHERE ? = ?
+        FROM coupon WHERE ? = ?
         "#, field_name, field_value
     )
     .fetch_optional(pool)
@@ -82,12 +82,12 @@ pub async fn get_by_field(field: Fields, pool: &MySqlPool) -> Result<Option<Cupo
         error
     })?;
 
-    return Ok(cupom);
+    return Ok(coupon);
 
 }
 
-pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<Option<Cupom>, sqlx::Error> {
-    let cupom = query_as!(Cupom, 
+pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<Option<Coupon>, sqlx::Error> {
+    let coupon = query_as!(Coupon, 
         r#"SELECT id
         , code
         , discount 
@@ -95,7 +95,7 @@ pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<Option<Cupom>, sqlx:
         , expiration_date as `expiration_date: chrono::NaiveDateTime`
         , date_created as `date_created: NaiveDateTime`
         , date_updated as `date_updated: NaiveDateTime`
-        FROM cupom WHERE id = ?
+        FROM coupon WHERE id = ?
         "#, id
     )
     .fetch_optional(pool)
@@ -105,6 +105,6 @@ pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<Option<Cupom>, sqlx:
         error
     })?;
 
-    return Ok(cupom);
+    return Ok(coupon);
 }
 

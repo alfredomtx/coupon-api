@@ -1,11 +1,11 @@
 [package]
-name = "actix_mysql"
+name = "coupon-api"
 version = "0.1.0"
 edition = "2021"
 
 [[bin]]
 path = "src/main.rs"
-name = "actix_mysql"
+name = "coupon-api"
 
 [lib]
 path = "src/lib.rs"
@@ -16,25 +16,23 @@ path = "src/lib.rs"
 once_cell = "1.12.0"
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt"] }
-wiremock = "0.5"
-linkify = "0.9.0"
-# We are not using fake >= 2.4 because it relies on rand 0.8
-# which has been recently released and it is not yet used by
-# quickcheck (solved in its upcoming 1.0 release!)
-fake = "~2.3"
 
 [dependencies]
 # runtime
-actix-web = "4.2.1"
+actix-web = { version = "4.2.1", features = ["cookies"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 mysql = "23.0.0"
-
 # error handling
 thiserror = "1.0.37"
 anyhow = "1.0.65"
 #serde
 serde_json = "1"
 serde = "1.0.147"
+serde-aux = "4.1.2"
+# JWT and authorization
+actix-jwt-auth-middleware = "0.2.0"
+jwt-compact = "0.6.0"
+exonum-crypto = "1.0.0"
 # tracing crates
 tracing = {version = "0.1.35", features = ["log"]}
 tracing-log = "0.1.3"
@@ -50,9 +48,8 @@ uuid = { version = "1.1.2", features = ["v4"] }
 chrono = "0.4.23"
 argon2 = {version = "0.4.1", features = ["std"]}
 
-# JWT and authorization
-actix-jwt-auth-middleware = "0.2.0"
-jwt-compact = "0.6.0"
+
+
 
 
 [dependencies.sqlx]

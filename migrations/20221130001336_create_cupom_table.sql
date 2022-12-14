@@ -1,4 +1,4 @@
-CREATE TABLE cupom (
+CREATE TABLE coupon (
   id int(11) NOT NULL AUTO_INCREMENT,
   code varchar(255) NOT NULL UNIQUE,
   discount int(11) NOT NULL,

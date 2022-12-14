@@ -7,7 +7,7 @@ async fn requests_missing_cookie_are_rejected() {
 
     // Act
     let response = reqwest::Client::new()
-        .get(&format!("{}/cupom", &app.address))
+        .get(&format!("{}/coupon", &app.address))
         .send()
         .await
         .expect("Failed to execute request.");
