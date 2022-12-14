@@ -1,4 +1,4 @@
-use super::model::{LoginRequest, Role};
+use super::model::{LoginRequest};
 use crate::{startup::ApplicationApiKey, authentication::LoginError};
 use actix_web::{
     get, post, HttpResponse,Responder,
