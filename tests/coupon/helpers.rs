@@ -19,7 +19,19 @@ pub struct TestApp {
 }
 
 impl TestApp {
-    pub async fn post_coupon(&self, body: serde_json::Value) -> reqwest::Response {
+    pub async fn post_coupon(&self, body: serde_json::Value, error_for_status: bool) -> reqwest::Response {
+        if (error_for_status){
+            return self.api_client
+            .post(&format!("{}/coupon", &self.address))
+            .header("Cookie", &self.cookie)
+            .json(&body)
+            .send()
+            .await
+            .unwrap()
+            .error_for_status()
+            .expect("Failed to execute request");
+
+        }
         return self.api_client
             .post(&format!("{}/coupon", &self.address))
             .header("Cookie", &self.cookie)
@@ -54,7 +66,7 @@ impl TestApp {
 
 // Ensure that the `tracing` stack is only initialised once using `once_cell`
 static TRACING: Lazy<()> = Lazy::new(|| {
-    let default_filter_level = "trace".to_string();
+    let default_filter_level = "debug".to_string();
     let subscriber_name = "test".to_string();
 
     // We cannot assign the output of `get_subscriber` to a variable based on the value
@@ -138,14 +150,13 @@ pub async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
         panic!("`TEST` string not found in Test Database name, is it correct?");
     }
 
-    let _ = connection
+    connection
         .execute(format!(r#"DROP DATABASE IF EXISTS {};"#, config.test_db_name).as_str())
         .await
-        .unwrap();
+        .expect("Failed to drop test database.");
         
     connection
         .execute(format!(r#"CREATE DATABASE IF NOT EXISTS {};"#, config.test_db_name).as_str())
-        // .execute(format!(r#"CREATE DATABASE test_rust;"#).as_str())
         .await
         .expect("Failed to create test database.");
     
@@ -153,6 +164,7 @@ pub async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
     let connection_pool = MySqlPool::connect_with(config.with_db(true))
         .await
         .expect("Failed to connect to test database.");
+        
     let _ = sqlx::migrate!("./migrations")
         .run(&connection_pool)
         .await;

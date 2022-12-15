@@ -42,9 +42,9 @@ pub struct CouponResponse {
 
 #[derive(thiserror::Error, Debug)]
 pub enum CouponError {
-    // #[error("Not found.)]
-    // NotFoundError,
-    #[error("Not found.")]
+    #[error("An internal error occurred, something went wrong.")]
+    InternalError(String),
+    #[error("{0}")]
     NotFoundError(#[source] anyhow::Error),
     // ValidationError has one String parameter
     #[error("{0}")]
@@ -79,6 +79,7 @@ impl TryFrom<Coupon> for CouponResponse {
 impl ResponseError for CouponError {
     fn status_code(&self) -> StatusCode {
         match self {
+            CouponError::InternalError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             CouponError::NotFoundError(_) => StatusCode::NOT_FOUND,
             CouponError::ValidationError(_) => StatusCode::BAD_REQUEST,
             CouponError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,

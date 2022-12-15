@@ -10,7 +10,7 @@ use coupon_api::{
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     // initializing subscriber for tracing & telemetry stuff
-    let subscriber = get_subscriber("coupon_api".into(), "info".into(), std::io::stdout);
+    let subscriber = get_subscriber("coupon_api".into(), "debug".into(), std::io::stdout);
     init_subscriber(subscriber);
 
     let configuration = get_configuration().expect("Failed to read configuration.");

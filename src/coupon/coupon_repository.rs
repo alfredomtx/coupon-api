@@ -49,15 +49,15 @@ pub enum Fields {
 }
 
 pub async fn get_by_field(field: Fields, pool: &MySqlPool) -> Result<Option<Coupon>, sqlx::Error> {
-    let field_name: String;
+    let field_name: &str;
     let field_value: String;
     match field {
         Fields::Id(id) => {
-            field_name = "id".to_string();
+            field_name = "id";
             field_value = id.to_string();
         },
         Fields::Code(code) => {
-            field_name = "code".to_string();
+            field_name = "code";
             field_value = code.to_string();
         }
         Fields::None => {
@@ -98,6 +98,28 @@ pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<Option<Coupon>, sqlx
         , date_updated as `date_updated: NaiveDateTime`
         FROM coupon WHERE id = ?
         "#, id
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!("Failed to execute select query: {:?}", error);
+        error
+    })?;
+
+    return Ok(coupon);
+}
+
+pub async fn get_by_code(code: String, pool: &MySqlPool) -> Result<Option<Coupon>, sqlx::Error> {
+    let coupon = query_as!(Coupon, 
+        r#"SELECT id
+        , code
+        , discount 
+        , max_usage_count
+        , expiration_date as `expiration_date: chrono::NaiveDateTime`
+        , date_created as `date_created: NaiveDateTime`
+        , date_updated as `date_updated: NaiveDateTime`
+        FROM coupon WHERE code = ?
+        "#, code
     )
     .fetch_optional(pool)
     .await
