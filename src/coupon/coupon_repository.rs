@@ -1,7 +1,7 @@
+use super::model::{Coupon, CouponInsert, CouponUpdate};
 use sqlx::{MySqlPool, query, query_as};
 use sqlx::types::chrono::{NaiveDateTime};
 
-use super::model::{Coupon, CouponInsert};
 
 pub async fn insert(coupon: CouponInsert, pool: &MySqlPool) -> Result<u64, sqlx::Error> {
     let result = query!(
@@ -21,6 +21,28 @@ pub async fn insert(coupon: CouponInsert, pool: &MySqlPool) -> Result<u64, sqlx:
     })?;
     return Ok(result.last_insert_id());
 }
+
+pub async fn update(coupon: CouponUpdate, pool: &MySqlPool) -> Result<(), sqlx::Error> {
+    query!(
+        r#"
+            UPDATE coupon SET
+            code = ?,
+            discount = ?,
+            max_usage_count = ?
+            WHERE id = ?
+        "#,
+        coupon.code, coupon.discount, coupon.max_usage_count, coupon.id
+    )
+    .execute(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!("Failed to execute update query: {:?}", error);
+        error
+    })?;
+
+    return Ok(());
+}
+
 
 pub async fn get_all(pool: &MySqlPool) -> Result<Vec<Coupon>, sqlx::Error> {
     let coupons = query_as!(Coupon,

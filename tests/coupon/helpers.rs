@@ -1,10 +1,10 @@
-use std::panic;
-
 use coupon_api::{
     configuration::{get_configuration, DatabaseSettings},
     telemetry::{get_subscriber, init_subscriber},
-    startup::{get_connection_pool, Application},
+    startup::{get_connection_pool, Application}, coupon::Coupon,
 };
+use std::panic;
+use serde_json::json;
 use sqlx::{MySqlPool, MySqlConnection, Connection, Executor};
 use once_cell::sync::Lazy;
 
@@ -19,6 +19,20 @@ pub struct TestApp {
 }
 
 impl TestApp {
+    pub async fn post_and_deserialize_coupon(&self, body: serde_json::Value) -> Coupon {
+        let response = self.post_coupon(body, true).await;
+        let response_body = response.text().await.expect("failed to get response_body");
+        let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
+        return coupon;
+    }
+
+    pub async fn get_and_deserialize_coupon(&self, id: i32) -> Coupon {
+        let response = self.get_coupon("/id", json!({"id": id})).await;
+        let response_body = response.text().await.expect("failed to get response_body");
+        let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
+        return coupon;
+    }
+
     pub async fn post_coupon(&self, body: serde_json::Value, error_for_status: bool) -> reqwest::Response {
         if (error_for_status){
             return self.api_client
@@ -32,6 +46,7 @@ impl TestApp {
             .expect("Failed to execute request");
 
         }
+
         return self.api_client
             .post(&format!("{}/coupon", &self.address))
             .header("Cookie", &self.cookie)
@@ -44,6 +59,16 @@ impl TestApp {
     pub async fn get_coupon(&self, endpoint: &str, body: serde_json::Value) -> reqwest::Response {
         return self.api_client
             .get(&format!("{}/coupon{}", &self.address, endpoint))
+            .header("Cookie", &self.cookie)
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request");
+    }
+        
+    pub async fn patch_coupon(&self, body: serde_json::Value) -> reqwest::Response {
+        return self.api_client
+            .patch(&format!("{}/coupon", &self.address))
             .header("Cookie", &self.cookie)
             .json(&body)
             .send()

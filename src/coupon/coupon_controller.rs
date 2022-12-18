@@ -1,9 +1,9 @@
+use super::model::{CouponRequest, CouponError, CouponUpdate};
+use super::coupon_service;
 use actix_web::{
-    web, get, post, HttpResponse, Responder,
+    web, get, post, patch,  HttpResponse, Responder,
     web::Data,
 };
-use super::model::{CouponRequest, CouponError};
-use super::coupon_service;
 use sqlx::MySqlPool;
 use serde::Deserialize;
 
@@ -47,6 +47,15 @@ pub async fn get_coupon_by_code(request: web::Json<Code>, pool: Data::<MySqlPool
 pub async fn add_coupon(request: web::Json<CouponRequest>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
     let coupon = coupon_service::insert(request, &pool).await?;
     return Ok(HttpResponse::Created().json(coupon));
+}
+
+#[tracing::instrument(
+    name = "Update coupon", skip(pool)
+)]
+#[patch("/coupon")]
+pub async fn update_coupon(request: web::Json<CouponUpdate>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
+    coupon_service::update(request, &pool).await?;
+    return Ok(HttpResponse::Ok().finish());
 }
 
 

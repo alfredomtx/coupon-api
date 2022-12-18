@@ -23,6 +23,7 @@ pub struct CouponInsert {
     pub code: String,
     pub discount: i32,
     pub max_usage_count: Option<i32>,
+    pub date_created: Option<NaiveDateTime>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -38,6 +39,14 @@ pub struct CouponResponse {
     pub code: String,
     pub discount: i32,
     pub max_usage_count: Option<i32>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CouponUpdate {
+    pub id: i32,
+    pub code: String,
+    pub discount: i32,
+    pub max_usage_count: i32,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -56,9 +65,10 @@ pub enum CouponError {
 impl CouponInsert {
     pub fn from_coupon(coupon: Coupon) -> CouponInsert {
         return CouponInsert {
-            code: coupon.code
-            , discount: coupon.discount
-            , max_usage_count: coupon.max_usage_count
+            code: coupon.code,
+            discount: coupon.discount,
+            max_usage_count: coupon.max_usage_count,
+            date_created: coupon.date_created,
         };
     }
 }

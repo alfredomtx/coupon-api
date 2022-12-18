@@ -11,7 +11,7 @@ use jwt_compact::alg::Ed25519;
 
 #[derive(Serialize, Deserialize, Clone, Debug, FromRequest)]
 pub struct User {
-    pub id: u32,
+    pub id: i32,
 }
 
 #[tracing::instrument(name = "Authenticate", skip(request, cookie_signer, api_key))]

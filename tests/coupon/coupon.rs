@@ -1,85 +1,41 @@
 use crate::helpers::{spawn_app};
-use coupon_api::coupon::{Coupon};
+use coupon_api::coupon::{Coupon, CouponUpdate, CouponRequest};
 use rand::distributions::{Alphanumeric, DistString};
 use serde_json::json;
 
-
-#[tokio::test]
-async fn post_persists_and_returns_the_new_coupon() {
-    // Arrange
-    let app = spawn_app().await;
-    // generating a random string
-    let code = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
-    let body = get_coupon_request_body(Some(code.clone()));
-    
-    // Act
-    let response = app.post_coupon(body, true).await;
-    let response_status = response.status().as_u16();
-    let response_body = response.text().await.expect("failed to get response_body");
-
-    // Assert
-    assert_eq!(201, response_status);
-
-    let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
-    
-    assert_coupon_fields(coupon.code, code, coupon.discount, coupon.max_usage_count);
-}
-
-#[tokio::test]
-async fn post_persists_the_new_coupon() {
-    // Arrange
-    let app = spawn_app().await;
-    let body = get_coupon_request_body(None);
-    
-    // Act
-    let response = app.post_coupon(body, true).await;
-    let response_status = response.status().as_u16();
-
-    assert_eq!(201, response_status);
-
-    let code = "TestCoupon";
-    let error_message = format!("Failed to fetch saved coupon, no coupon was persisted.\nResponse Status:{}", response_status);
-    let saved = sqlx::query!("SELECT * FROM coupon WHERE code = ?", code)
-        .fetch_one(&app.db_pool)
-        .await
-        .expect(error_message.as_str());
-
-    // Assert
-    assert_coupon_fields(saved.code, "TestCoupon".to_string(), saved.discount, saved.max_usage_count);
-}
-
+/**
+ * GET
+ */
 #[tokio::test]
 async fn get_coupon_by_id_returns_a_coupon() {
     // Arrange
     let app = spawn_app().await;
-    let code = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
-    let body = get_coupon_request_body(Some(code.clone()));
+    let code = get_random_coupon_code();
+    let body = get_coupon_request_body(code.clone());
     
     // Act
     // add the coupon before getting it
     app.post_coupon(body, true).await;
 
-    // get coupon with id 1
-    let response = app.get_coupon("/id", json!({"id": 1})).await;
-    let response_body = response.text().await.expect("failed to get response_body");
-    let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
+    let coupon = app.get_and_deserialize_coupon(1).await;
 
     // Assert
-    assert_coupon_fields(coupon.code, code, coupon.discount, coupon.max_usage_count);
+    // the `code` field we are not asserting here, since it is not guaranteed
+    // that the `post_coupon` added the first coupon(with id 1)
+    assert_coupon_fields(coupon.code.clone(), coupon.code, coupon.discount, coupon.max_usage_count);
 }
 
 #[tokio::test]
 async fn get_coupon_by_code_returns_a_coupon() {
     // Arrange
     let app = spawn_app().await;
-    let code = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
-    let body = get_coupon_request_body(Some(code.clone()));
+    let code = get_random_coupon_code();
+    let body = get_coupon_request_body(code.clone());
     
     // Act
     // add the coupon before getting it
     app.post_coupon(body, true).await;
 
-    // get coupon with id 1
     let response = app.get_coupon("/code", json!({"code": code})).await;
     let response_body = response.text().await.expect("failed to get response_body");
     let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
@@ -88,22 +44,21 @@ async fn get_coupon_by_code_returns_a_coupon() {
     assert_coupon_fields(coupon.code, code, coupon.discount, coupon.max_usage_count);
 }
 
-
 #[tokio::test]
 async fn get_all_coupons_returns_a_list_of_coupons() {
     // Arrange
     let app = spawn_app().await;
-    let code1 = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
-    let body1 = get_coupon_request_body(Some(code1.clone()));
-    let code2 = Alphanumeric.sample_string(&mut rand::thread_rng(), 26);
-    let body2 = get_coupon_request_body(Some(code2.clone()));
+    let code1 = get_random_coupon_code();
+    let body1 = get_coupon_request_body(code1.clone());
+    let code2 = get_random_coupon_code();
+    let body2 = get_coupon_request_body(code2.clone());
     
     // Act
     // add 2 coupons
     app.post_coupon(body1, true).await;
     app.post_coupon(body2, true).await;
 
-    // get coupons
+    // get all coupons
     let response = app.get_coupon("", json!({})).await;
     let response_body = response.text().await.expect("failed to get response_body");
     let coupons: Vec<Coupon> = serde_json::from_str(&response_body).unwrap();
@@ -119,37 +74,8 @@ async fn get_all_coupons_returns_a_list_of_coupons() {
     assert!(added_coupons.len() == 2);
 }
 
-
-
 #[tokio::test]
-async fn coupon_returns_400_for_invalid_data() {
-    // Arrange
-    let app = spawn_app().await;
-
-    let test_cases = vec![
-        (json!({"discount": 1}), "missing code"),
-        (json!({"code": 1}), "missing discount"),
-        (json!({"discount": "a"}), "discount is a string"),
-        (json!({"code": 1}), "code is an integer"),
-    ];
-
-    // Act 
-    for (invalid_body, error_message) in test_cases {
-        let response = app.post_coupon(invalid_body, false).await;
-
-        // Assert
-        assert_eq!(
-            400,
-            response.status().as_u16(),
-            "The API did not fail with 400 Bad Request when the payload was {}.",
-            error_message
-        );
-    }
-}
-
-
-#[tokio::test]
-async fn coupon_not_found_returns_404(){
+async fn get_coupon_not_found_returns_404(){
     // Arrange
     let app = spawn_app().await;
 
@@ -172,6 +98,159 @@ async fn coupon_not_found_returns_404(){
     }
 }
 
+
+/**
+ * POST
+ */
+#[tokio::test]
+async fn post_persists_and_returns_the_new_coupon() {
+    // Arrange
+    let app = spawn_app().await;
+    let code = get_random_coupon_code();   
+    let body = get_coupon_request_body(code.clone());
+    
+    // Act
+    let response = app.post_coupon(body, true).await;
+    let response_status = response.status().as_u16();
+    let response_body = response.text().await.expect("failed to get response_body");
+
+    // Assert
+    assert_eq!(201, response_status);
+
+    let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
+    
+    assert_coupon_fields(coupon.code, code, coupon.discount, coupon.max_usage_count);
+}
+
+#[tokio::test]
+async fn post_returns_400_for_invalid_data() {
+    // Arrange
+    let app = spawn_app().await;
+
+    let test_cases = vec![
+        (json!({"discount": 1}), "missing code"),
+        (json!({"code": 1}), "missing discount"),
+        (json!({"discount": "a"}), "invalid discount (string)"),
+        (json!({"discount": -1}), "invalid discount (negative)"),
+        (json!({"code": 1}), "code is an integer"),
+        (json!({"code": -1}), "invalid code (negative)"),
+    ];
+
+    // Act 
+    for (invalid_body, error_message) in test_cases {
+        let response = app.post_coupon(invalid_body, false).await;
+
+        // Assert
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            "The API did not fail with 400 Bad Request when the payload was `{}`.",
+            error_message
+        );
+    }
+}
+
+
+/**
+ * PATCH
+ */
+#[tokio::test]
+async fn patch_updates_the_coupon_successfully() {
+    // Arrange
+    let app = spawn_app().await;
+    let code = get_random_coupon_code();
+    let body = get_coupon_request_body(code.clone());
+    
+    // Act
+    // add a coupon
+    let added_coupon = app.post_and_deserialize_coupon(body).await; 
+        
+    // update the added coupon with new data
+    let body = json!({   
+        "id": added_coupon.id,
+        "code": "CouponWithUpdatedData",
+        "discount": 99,
+        "max_usage_count": 123,
+    });
+    
+    let response = app.patch_coupon(body).await;
+    let response_status = response.status().as_u16();
+        
+    // Assert
+    assert_eq!(200, response_status);
+
+    let updated_coupon = app.get_and_deserialize_coupon(added_coupon.id).await;
+
+    assert_eq!(added_coupon.id, updated_coupon.id);
+    assert_eq!(updated_coupon.code, "CouponWithUpdatedData".to_string());
+    assert_eq!(updated_coupon.discount, 99);
+    assert_eq!(updated_coupon.max_usage_count, Some(123));  
+    // TODO: assert that `date_updated` has changed
+}
+
+#[tokio::test]
+async fn patch_returns_404_for_coupon_not_found(){
+    // Arrange
+    let app = spawn_app().await;
+    let coupon = get_default_coupon_data(get_random_coupon_code());
+    let body = json!(serde_json::to_value(&coupon).unwrap());
+
+    // Act 
+    let response = app.patch_coupon(body).await;
+
+    // Assert
+    assert_eq!(
+        404,
+        response.status().as_u16(),
+        "patch` did not fail with 404 Not Found."
+    );
+}
+
+#[tokio::test]
+async fn patch_returns_400_for_invalid_data() {
+    // Arrange
+    let app = spawn_app().await;
+
+    let test_cases = vec![
+        (json!({
+            "id": "string",
+            "code": "test",
+            "discount": 1,
+        }), "invalid id (string)"),
+        (json!({
+            "id": -1,
+            "code": "test",
+            "discount": 1,
+        }), "invalid id (negative)"),
+        (json!({
+            "code": "test",
+            "discount": 1,
+        }), "missing id"),
+        (json!({"discount": 1}), "missing code"),
+        (json!({"code": 1}), "missing discount"),
+        (json!({"discount": "a"}), "invalid discount (string)"),
+        (json!({"discount": -1}), "invalid discount (negative)"),
+        (json!({"code": 1}), "code is an integer"),
+        (json!({"code": -1}), "invalid code (negative)"),
+    ];
+
+    // Act 
+    for (invalid_body, error_message) in test_cases {
+        let response = app.patch_coupon(invalid_body).await;
+
+        // Assert
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            "The API did not fail with 400 Bad Request when the payload was `{}`.",
+            error_message
+        );
+    }
+}
+
+/**
+ * Helper functions
+ */
 fn assert_coupon_fields(code: String, expected_code: String, discount: i32, max_usage_count: Option<i32>){
     assert_eq!(code, expected_code);
     assert_eq!(discount, 10);
@@ -179,18 +258,28 @@ fn assert_coupon_fields(code: String, expected_code: String, discount: i32, max_
     // assert_eq!(expiration_date, Some(NaiveDateTime::from_str("31/12/2030 00:00:00").unwrap()));
 }
 
-fn get_coupon_request_body(code: Option<String>) -> serde_json::Value {
-    let coupon_code;
-    match code {
-        Some(code) => coupon_code = code,
-        None => coupon_code = "TestCoupon".to_string()
+fn get_default_coupon_data(code: String) -> CouponUpdate {
+    return CouponUpdate { 
+        id: 123456789,
+        code,
+        discount: 10,
+        max_usage_count: 2,
     };
-    return json!({
-        "code": coupon_code,
-        "discount": 10,
-        "max_usage_count": 2,
-        // "expiration_date": "31/12/2030 00:00:00",
-    });
+}
+
+// Return a CouponRequest struct as JSON
+fn get_coupon_request_body(code: String) -> serde_json::Value {
+    let coupon = get_default_coupon_data(code);
+    let coupon_request = CouponRequest {
+        code: coupon.code,
+        discount: coupon.discount,
+        max_usage_count: Some(coupon.max_usage_count),
+    };
+    return json!(serde_json::to_value(&coupon_request).unwrap());
+}
+
+fn get_random_coupon_code() -> String {
+    return Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
 }
 
 // #[tokio::test]

@@ -1,10 +1,8 @@
+use super::model::{CouponRequest, CouponResponse, CouponError, CouponInsert, CouponUpdate};
+use super::{coupon_repository};
 use sqlx::{MySqlPool};
 use actix_web::web::Json;
 use anyhow::{Context, Result, anyhow};
-
-use super::model::{CouponRequest, CouponResponse, CouponError, CouponInsert};
-use super::{coupon_repository};
-// use super::coupon_repository::Fields;
 
 
 pub async fn get_all(pool: &MySqlPool) -> Result<Vec<CouponResponse>, CouponError> {
@@ -51,10 +49,12 @@ pub async fn get_by_code(code: String, pool: &MySqlPool) -> Result<CouponRespons
 }
 
 pub async fn insert(coupon: Json<CouponRequest>, pool: &MySqlPool) -> Result<CouponResponse, anyhow::Error> {
+    // TODO: set `date_added` field
     let coupon_insert = CouponInsert {
         code: coupon.code.to_string(),
         discount: coupon.discount,
-        max_usage_count: coupon.max_usage_count
+        max_usage_count: coupon.max_usage_count,
+        date_created: None,
     };
 
     let inserted_id = coupon_repository::insert(coupon_insert, pool).await
@@ -68,3 +68,24 @@ pub async fn insert(coupon: Json<CouponRequest>, pool: &MySqlPool) -> Result<Cou
     let coupon_response = coupon.try_into().map_err(CouponError::InternalError)?;
     return Ok(coupon_response);
 }
+
+pub async fn update(coupon: Json<CouponUpdate>, pool: &MySqlPool) -> Result<(), CouponError> {
+    let coupon = coupon.0;
+    // check if the coupon exists
+    coupon_repository::get_by_id(coupon.id, pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?
+        .ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with id `{}` not found", coupon.id))))?;
+
+    let coupon_update = CouponUpdate {
+        id: coupon.id,
+        code: coupon.code,
+        discount: coupon.discount,
+        max_usage_count: coupon.max_usage_count,
+    };
+
+    coupon_repository::update(coupon_update, &pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?;
+
+    return Ok(());
+}
+

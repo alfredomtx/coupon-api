@@ -4,9 +4,8 @@ use crate::{
         hello, authenticate, User
     },
     coupon::{
-        get_coupon_by_code, get_coupon_by_id, get_all_coupons, add_coupon,
+        health_check, get_coupon_by_code, get_coupon_by_id, get_all_coupons, add_coupon, update_coupon,
     },
-    routes::{health_check},
 };
 use actix_web::{
     App, HttpServer,
@@ -75,6 +74,7 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
                     .service(get_coupon_by_id)
                     .service(get_coupon_by_code)
                     .service(add_coupon)
+                    .service(update_coupon)
                     .wrap(AuthenticationService::new(authority.clone()))
                 )
 
