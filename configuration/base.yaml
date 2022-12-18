@@ -3,7 +3,7 @@ application:
   api_key: "test123"
   
 database:
-  # name of the test database, this database will be created and droped in every test
+  # name of the test database, this database will be droped and created when running the tests
   test_db_name: "TEST_RUST"
   host: "127.0.0.1"
   port: 3306
