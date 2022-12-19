@@ -1,7 +1,7 @@
 use super::model::{CouponRequest, CouponError, CouponUpdate};
 use super::coupon_service;
 use actix_web::{
-    web, get, post, patch,  HttpResponse, Responder,
+    web, get, post, patch, delete, HttpResponse, Responder,
     web::Data,
 };
 use sqlx::MySqlPool;
@@ -55,6 +55,24 @@ pub async fn add_coupon(request: web::Json<CouponRequest>, pool: Data::<MySqlPoo
 #[patch("/coupon")]
 pub async fn update_coupon(request: web::Json<CouponUpdate>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
     coupon_service::update(request, &pool).await?;
+    return Ok(HttpResponse::Ok().finish());
+}
+
+#[tracing::instrument(
+    name = "Delete coupon by id", skip(pool)
+)]
+#[delete("/coupon/id")]
+pub async fn delete_coupon_by_id(request: web::Json<Id>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
+    coupon_service::delete_by_id(request.id, &pool).await?;
+    return Ok(HttpResponse::Ok().finish());
+}
+
+#[tracing::instrument(
+    name = "Delete coupon by code", skip(pool)
+)]
+#[delete("/coupon/code")]
+pub async fn delete_coupon_by_code(request: web::Json<Code>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
+    coupon_service::delete_by_code(request.code.clone(), &pool).await?;
     return Ok(HttpResponse::Ok().finish());
 }
 

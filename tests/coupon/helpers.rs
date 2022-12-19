@@ -76,6 +76,16 @@ impl TestApp {
         .expect("Failed to execute request");
     }
 
+    pub async fn delete_coupon(&self, endpoint: &str, body: serde_json::Value) -> reqwest::Response {
+        return self.api_client
+            .delete(&format!("{}/coupon{}", &self.address, endpoint))
+            .header("Cookie", &self.cookie)
+            .json(&body)
+            .send()
+            .await
+        .expect("Failed to execute request");
+    }
+
     pub async fn authenticate_request(&self) -> reqwest::Response {
         return self.api_client
         .post(&format!("{}/authenticate", &self.address))

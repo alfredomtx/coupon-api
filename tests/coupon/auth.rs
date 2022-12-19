@@ -11,6 +11,7 @@ async fn requests_missing_authorization_cookie_are_rejected() {
         ("get", "/"),
         ("post", "/"),
         ("patch", "/"),
+        ("delete", "/"),
     ];
 
     // Act

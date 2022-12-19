@@ -131,7 +131,7 @@ pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<Option<Coupon>, sqlx
     return Ok(coupon);
 }
 
-pub async fn get_by_code(code: String, pool: &MySqlPool) -> Result<Option<Coupon>, sqlx::Error> {
+pub async fn get_by_code(code: &String, pool: &MySqlPool) -> Result<Option<Coupon>, sqlx::Error> {
     let coupon = query_as!(Coupon, 
         r#"SELECT id
         , code
@@ -151,4 +151,36 @@ pub async fn get_by_code(code: String, pool: &MySqlPool) -> Result<Option<Coupon
     })?;
 
     return Ok(coupon);
+}
+
+pub async fn delete_by_id(id: i32, pool: &MySqlPool) -> Result<(), sqlx::Error> {
+    query!( 
+        r#"DELETE FROM coupon
+            WHERE id = ?
+        "#, id
+    )
+    .execute(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!("Failed to execute delete query: {:?}", error);
+        error
+    })?;
+
+    return Ok(());
+}
+
+pub async fn delete_by_code(code: &String, pool: &MySqlPool) -> Result<(), sqlx::Error> {
+    query!( 
+        r#"DELETE FROM coupon
+            WHERE code = ?
+        "#, code
+    )
+    .execute(pool)
+    .await
+    .map_err(|error| {
+        tracing::error!("Failed to execute delete query: {:?}", error);
+        error
+    })?;
+
+    return Ok(());
 }

@@ -132,7 +132,7 @@ async fn post_returns_400_for_invalid_data() {
         (json!({"code": 1}), "missing discount"),
         (json!({"discount": "a"}), "invalid discount (string)"),
         (json!({"discount": -1}), "invalid discount (negative)"),
-        (json!({"code": 1}), "code is an integer"),
+        (json!({"code": 1}), "invalid code (integer)"),
         (json!({"code": -1}), "invalid code (negative)"),
     ];
 
@@ -188,6 +188,111 @@ async fn patch_updates_the_coupon_successfully() {
     // TODO: assert that `date_updated` has changed
 }
 
+/**
+ * DELETE
+ */
+#[tokio::test]
+async fn delete_coupon_by_id_successfully() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = get_coupon_request_body(get_random_coupon_code().clone());
+    
+    // Act
+    // add a coupon
+    let added_coupon = app.post_and_deserialize_coupon(body).await; 
+    // delete added coupon
+    let response = app.delete_coupon("/id", json!({"id": added_coupon.id})).await;
+    let response_status = response.status().as_u16();
+    assert_eq!(200, response_status);
+
+    // try to get the deleted coupon
+    let response = app.get_coupon("/id", json!({"id": added_coupon.id})).await;
+    let response_status = response.status().as_u16();
+
+    // Assert 2
+    assert_eq!(404, response_status);
+}
+
+#[tokio::test]
+async fn delete_coupon_by_code_successfully() {
+    // Arrange
+    let app = spawn_app().await;
+    let body = get_coupon_request_body(get_random_coupon_code().clone());
+    
+    // Act
+    // add a coupon
+    let added_coupon = app.post_and_deserialize_coupon(body).await; 
+    // delete added coupon
+    let response = app.delete_coupon("/code", json!({"code": added_coupon.code.clone()})).await;
+    let response_status = response.status().as_u16();
+    assert_eq!(200, response_status);
+
+    // try to get the deleted coupon
+    let response = app.get_coupon("/code", json!({"code": added_coupon.code})).await;
+    let response_status = response.status().as_u16();
+
+    // Assert 2
+    assert_eq!(404, response_status);
+}
+
+#[tokio::test]
+async fn delete_by_id_returns_400_for_invalid_data() {
+    // Arrange
+    let app = spawn_app().await;
+
+    let test_cases = vec![
+        (json!({
+            "some random field": "",
+        }), "missing id"),
+        (json!({
+            "id": "string",
+        }), "invalid id (string)"),
+        (json!({
+            "id": -1,
+        }), "invalid id (negative)"),
+    ];
+
+    // Act 
+    for (invalid_body, error_message) in test_cases {
+        let response = app.delete_coupon("/id", invalid_body).await;
+
+        // Assert
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            "The API did not fail with 400 Bad Request when the payload was `{}`.",
+            error_message
+        );
+    }
+}
+
+#[tokio::test]
+async fn delete_by_code_returns_400_for_invalid_data() {
+    // Arrange
+    let app = spawn_app().await;
+
+    let test_cases = vec![
+        (json!({
+            "some random field": "",
+        }), "missing code"),
+        (json!({"code": 1}), "invalid code (integer)"),
+        (json!({"code": -1}), "invalid code (negative)"),
+    ];
+
+    // Act 
+    for (invalid_body, error_message) in test_cases {
+        let response = app.delete_coupon("/code", invalid_body).await;
+
+        // Assert
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            "The API did not fail with 400 Bad Request when the payload was `{}`.",
+            error_message
+        );
+    }
+}
+
 #[tokio::test]
 async fn patch_returns_404_for_coupon_not_found(){
     // Arrange
@@ -230,7 +335,7 @@ async fn patch_returns_400_for_invalid_data() {
         (json!({"code": 1}), "missing discount"),
         (json!({"discount": "a"}), "invalid discount (string)"),
         (json!({"discount": -1}), "invalid discount (negative)"),
-        (json!({"code": 1}), "code is an integer"),
+        (json!({"code": 1}), "invalid code (integer)"),
         (json!({"code": -1}), "invalid code (negative)"),
     ];
 

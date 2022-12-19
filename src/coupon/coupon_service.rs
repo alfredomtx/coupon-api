@@ -28,8 +28,7 @@ pub async fn get_all(pool: &MySqlPool) -> Result<Vec<CouponResponse>, CouponErro
 
 pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<CouponResponse, CouponError> {
     let result = coupon_repository::get_by_id(id, pool).await
-    // let result = coupon_repository::get_by_field(Fields::Id(id), pool).await
-        .context("failed to get by id")?;
+        .context("Failed to get by id")?;
 
     let coupon = result.ok_or( CouponError::NotFoundError(anyhow!(format!("Coupon with id `{}` not found", id))))?;
 
@@ -38,9 +37,8 @@ pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<CouponResponse, Coup
 }
 
 pub async fn get_by_code(code: String, pool: &MySqlPool) -> Result<CouponResponse, CouponError> {
-    let result = coupon_repository::get_by_code(code.clone(), pool).await
-    // let result = coupon_repository::get_by_field(Fields::Code(code.clone()), pool).await
-    .context("failed to get by code")?;
+    let result = coupon_repository::get_by_code(&code, pool).await
+        .context("Failed to get by code")?;
 
     let coupon = result.ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with code `{}` not found", code))))?;
 
@@ -89,3 +87,28 @@ pub async fn update(coupon: Json<CouponUpdate>, pool: &MySqlPool) -> Result<(), 
     return Ok(());
 }
 
+pub async fn delete_by_id(id: i32, pool: &MySqlPool) -> Result<(), CouponError> {
+    coupon_repository::delete_by_id(id, pool).await
+        .context("Failed to delete by id")?;
+
+    coupon_repository::get_by_id(id, pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?
+        .ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with id `{}` not found", id))))?;
+
+    coupon_repository::delete_by_id(id, &pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?;
+    return Ok(());
+}
+
+pub async fn delete_by_code(code: String, pool: &MySqlPool) -> Result<(), CouponError> {
+    coupon_repository::delete_by_code(&code, pool).await
+        .context("Failed to delete by code")?;
+
+    coupon_repository::get_by_code(&code, pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?
+        .ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with code `{}` not found", &code))))?;
+            
+    coupon_repository::delete_by_code(&code, &pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?;
+    return Ok(());
+}
