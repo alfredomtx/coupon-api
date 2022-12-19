@@ -9,9 +9,12 @@ async fn requests_missing_authorization_cookie_are_rejected() {
     // make the requests and expect that it will return `401 Unauthorized` as response.
     let endpoints = vec![
         ("get", "/"),
+        ("get", "/id"),
+        ("get", "/code"),
         ("post", "/"),
         ("patch", "/"),
-        ("delete", "/"),
+        ("delete", "/id"),
+        ("delete", "/code"),
     ];
 
     // Act
@@ -19,27 +22,18 @@ async fn requests_missing_authorization_cookie_are_rejected() {
         let response: reqwest::Response;
         match method {
             "get" => {
-                response = reqwest::Client::new()
-                    .get(&format!("{}/coupon{}", &app.address, endpoint))
-                    .send()
-                    .await
-                    .expect("Failed to execute request.");
+                response = app.api_client.get(&format!("{}/coupon{}", &app.address, endpoint)).send().await.unwrap();
             },
             "post" => {
-                response = reqwest::Client::new()
-                    .post(&format!("{}/coupon{}", &app.address, endpoint))
-                    .send()
-                    .await
-                    .expect("Failed to execute request.");
+                response = app.api_client.post(&format!("{}/coupon{}", &app.address, endpoint)).send().await.unwrap();
             },
             "patch" => {
-                response = reqwest::Client::new()
-                    .patch(&format!("{}/coupon{}", &app.address, endpoint))
-                    .send()
-                    .await
-                    .expect("Failed to execute request.");
+                response = app.api_client.patch(&format!("{}/coupon{}", &app.address, endpoint)).send().await.unwrap();
             },
-            _ => panic!("Invalid method"),
+            "delete" => {
+                response = app.api_client.delete(&format!("{}/coupon{}", &app.address, endpoint)).send().await.unwrap();
+            },
+            _ => panic!("{}", format!("Invalid method: {}", method)),
         }
 
         // Assert
