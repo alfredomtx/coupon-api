@@ -1,36 +1,39 @@
 use actix_web::{ 
     ResponseError,
-    http:: {
-        StatusCode,
-    },
+    http::{StatusCode},
 };
-// use chrono::NaiveDateTime;
 use serde::{Serialize, Deserialize};
+// use chrono::NaiveDateTime;
 use sqlx::types::chrono::{NaiveDateTime};
-#[derive(Debug, Deserialize)]
+
+#[derive(Serialize, Debug, Deserialize)]
 pub struct Coupon {
     pub id: i32,
     pub code: String,
     pub discount: i32,
+    pub active: bool,
     pub max_usage_count: Option<i32>,
     pub expiration_date: Option<NaiveDateTime>,
     pub date_created: Option<NaiveDateTime>,
     pub date_updated: Option<NaiveDateTime>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CouponInsert {
     pub code: String,
     pub discount: i32,
+    pub active: bool,
     pub max_usage_count: Option<i32>,
-    pub date_created: Option<NaiveDateTime>,
+    pub expiration_date: Option<NaiveDateTime>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CouponRequest {
     pub code: String,
     pub discount: i32,
+    pub active: bool,
     pub max_usage_count: Option<i32>,
+    pub expiration_date: Option<NaiveDateTime>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -38,7 +41,11 @@ pub struct CouponResponse {
     pub id: i32,
     pub code: String,
     pub discount: i32,
+    pub active: bool,
     pub max_usage_count: Option<i32>,
+    pub expiration_date: Option<NaiveDateTime>,
+    pub date_created: Option<NaiveDateTime>,
+    pub date_updated: Option<NaiveDateTime>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -46,13 +53,16 @@ pub struct CouponUpdate {
     pub id: i32,
     pub code: String,
     pub discount: i32,
-    pub max_usage_count: i32,
+    pub active: bool,
+    pub max_usage_count: Option<i32>,
+    pub expiration_date: Option<NaiveDateTime>,
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum CouponError {
-    #[error("An internal error occurred, something went wrong.")]
-    InternalError(String),
+    #[error("{0}")]
+    InternalError(#[source] anyhow::Error),
+    // NotFoundError has one String parameter
     #[error("{0}")]
     NotFoundError(#[source] anyhow::Error),
     // ValidationError has one String parameter
@@ -67,8 +77,9 @@ impl CouponInsert {
         return CouponInsert {
             code: coupon.code,
             discount: coupon.discount,
+            active: coupon.active,
             max_usage_count: coupon.max_usage_count,
-            date_created: coupon.date_created,
+            expiration_date: coupon.expiration_date,
         };
     }
 }
@@ -78,10 +89,14 @@ impl TryFrom<Coupon> for CouponResponse {
     type Error = String;
     fn try_from(coupon: Coupon) -> Result<Self, Self::Error> {
         return Ok( Self {
-            id: coupon.id
-            , code: coupon.code
-            , discount: coupon.discount
-            , max_usage_count: coupon.max_usage_count
+            id: coupon.id,
+            code: coupon.code,
+            discount: coupon.discount,
+            active: coupon.active,
+            max_usage_count: coupon.max_usage_count,
+            expiration_date: coupon.expiration_date,
+            date_created: coupon.date_created,
+            date_updated: coupon.date_updated,
         });
     }
 }

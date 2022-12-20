@@ -7,11 +7,15 @@ pub async fn insert(coupon: CouponInsert, pool: &MySqlPool) -> Result<u64, sqlx:
     let result = query!(
         r#"
             INSERT INTO coupon 
-            (code, discount, max_usage_count) 
+            (code, discount, active, max_usage_count, expiration_date) 
             VALUES 
-            (?, ?, ?)
+            (?, ?, ?, ?, ?)
         "#,
-        coupon.code, coupon.discount, coupon.max_usage_count
+        coupon.code,
+        coupon.discount,
+        coupon.active,
+        coupon.max_usage_count,
+        coupon.expiration_date,
     )
     .execute(pool)
     .await
@@ -28,10 +32,17 @@ pub async fn update(coupon: CouponUpdate, pool: &MySqlPool) -> Result<(), sqlx::
             UPDATE coupon SET
             code = ?,
             discount = ?,
-            max_usage_count = ?
+            active = ?,
+            max_usage_count = ?,
+            expiration_date = ?
             WHERE id = ?
         "#,
-        coupon.code, coupon.discount, coupon.max_usage_count, coupon.id
+        coupon.code,
+        coupon.discount,
+        coupon.active,
+        coupon.max_usage_count,
+        coupon.expiration_date,
+        coupon.id
     )
     .execute(pool)
     .await
@@ -50,8 +61,9 @@ pub async fn get_all(pool: &MySqlPool) -> Result<Vec<Coupon>, sqlx::Error> {
         , code
         , discount 
         , max_usage_count
+        , active as `active: bool`
         , expiration_date as `expiration_date: NaiveDateTime`
-        , date_created as `date_created: NaiveDateTime`
+        , date_created as `date_created: Option<NaiveDateTime>`
         , date_updated as `date_updated: NaiveDateTime`
         FROM coupon"#)
     .fetch_all(pool)
@@ -92,8 +104,9 @@ pub async fn get_by_field(field: Fields, pool: &MySqlPool) -> Result<Option<Coup
         , code
         , discount 
         , max_usage_count
-        , expiration_date as `expiration_date: chrono::NaiveDateTime`
-        , date_created as `date_created: NaiveDateTime`
+        , active as `active: bool`
+        , expiration_date as `expiration_date: NaiveDateTime`
+        , date_created as `date_created: Option<NaiveDateTime>`
         , date_updated as `date_updated: NaiveDateTime`
         FROM coupon WHERE ? = ?
         "#, field_name, field_value
@@ -115,8 +128,9 @@ pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<Option<Coupon>, sqlx
         , code
         , discount 
         , max_usage_count
-        , expiration_date as `expiration_date: chrono::NaiveDateTime`
-        , date_created as `date_created: NaiveDateTime`
+        , active as `active: bool`
+        , expiration_date as `expiration_date: NaiveDateTime`
+        , date_created as `date_created: Option<NaiveDateTime>`
         , date_updated as `date_updated: NaiveDateTime`
         FROM coupon WHERE id = ?
         "#, id
@@ -137,8 +151,9 @@ pub async fn get_by_code(code: &String, pool: &MySqlPool) -> Result<Option<Coupo
         , code
         , discount 
         , max_usage_count
-        , expiration_date as `expiration_date: chrono::NaiveDateTime`
-        , date_created as `date_created: NaiveDateTime`
+        , active as `active: bool`
+        , expiration_date as `expiration_date: NaiveDateTime`
+        , date_created as `date_created: Option<NaiveDateTime>`
         , date_updated as `date_updated: NaiveDateTime`
         FROM coupon WHERE code = ?
         "#, code

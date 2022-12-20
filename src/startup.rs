@@ -25,6 +25,7 @@ use jwt_compact::alg::Ed25519;
 
 pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key: String) -> Result<Server, std::io::Error> {
     let key_pair = KeyPair::random();
+    
 
     let cookie_signer = CookieSigner::new()
         .signing_key(key_pair.secret_key().clone())
@@ -35,7 +36,7 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
     let authority = Authority::<User, _, _, _>::new()
         .refresh_authorizer(|| async move { Ok(()) })
         .cookie_signer(Some(cookie_signer.clone()))
-        .verifying_key(key_pair.public_key().clone())
+        .verifying_key(key_pair.public_key())
         .build()
         .unwrap();
     

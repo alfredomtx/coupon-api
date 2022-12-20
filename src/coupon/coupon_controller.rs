@@ -77,5 +77,3 @@ pub async fn delete_coupon_by_code(request: web::Json<Code>, pool: Data::<MySqlP
 }
 
 
-
-

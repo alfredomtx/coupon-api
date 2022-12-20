@@ -1,4 +1,5 @@
 use crate::helpers::{spawn_app};
+use chrono::NaiveDateTime;
 use coupon_api::coupon::{Coupon, CouponUpdate, CouponRequest};
 use rand::distributions::{Alphanumeric, DistString};
 use serde_json::json;
@@ -22,7 +23,7 @@ async fn get_coupon_by_id_returns_a_coupon() {
     // Assert
     // the `code` field we are not asserting here, since it is not guaranteed
     // that the `post_coupon` added the first coupon(with id 1)
-    assert_coupon_fields(coupon.code.clone(), coupon.code, coupon.discount, coupon.max_usage_count);
+    assert_coupon_fields(coupon.code.clone(), coupon.code, coupon.discount, coupon.max_usage_count, coupon.expiration_date);
 }
 
 #[tokio::test]
@@ -41,7 +42,7 @@ async fn get_coupon_by_code_returns_a_coupon() {
     let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
 
     // Assert
-    assert_coupon_fields(coupon.code, code, coupon.discount, coupon.max_usage_count);
+    assert_coupon_fields(coupon.code, code, coupon.discount, coupon.max_usage_count, coupon.expiration_date);
 }
 
 #[tokio::test]
@@ -110,7 +111,7 @@ async fn post_persists_and_returns_the_new_coupon() {
     let body = get_coupon_request_body(code.clone());
     
     // Act
-    let response = app.post_coupon(body, true).await;
+    let response = app.post_coupon(body, false).await;
     let response_status = response.status().as_u16();
     let response_body = response.text().await.expect("failed to get response_body");
 
@@ -119,7 +120,7 @@ async fn post_persists_and_returns_the_new_coupon() {
 
     let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
     
-    assert_coupon_fields(coupon.code, code, coupon.discount, coupon.max_usage_count);
+    assert_coupon_fields(coupon.code, code, coupon.discount, coupon.max_usage_count, coupon.expiration_date);
 }
 
 #[tokio::test]
@@ -203,6 +204,7 @@ async fn delete_coupon_by_id_successfully() {
     // delete added coupon
     let response = app.delete_coupon("/id", json!({"id": added_coupon.id})).await;
     let response_status = response.status().as_u16();
+
     assert_eq!(200, response_status);
 
     // try to get the deleted coupon
@@ -218,6 +220,7 @@ async fn delete_coupon_by_code_successfully() {
     // Arrange
     let app = spawn_app().await;
     let body = get_coupon_request_body(get_random_coupon_code().clone());
+    // dbg!(&body);
     
     // Act
     // add a coupon
@@ -225,6 +228,7 @@ async fn delete_coupon_by_code_successfully() {
     // delete added coupon
     let response = app.delete_coupon("/code", json!({"code": added_coupon.code.clone()})).await;
     let response_status = response.status().as_u16();
+    let response_body = response.text().await.expect("failed to get response_body");
     assert_eq!(200, response_status);
 
     // try to get the deleted coupon
@@ -267,12 +271,8 @@ async fn delete_by_code_returns_400_for_invalid_data() {
     let app = spawn_app().await;
 
     let test_cases = vec![
-        (json!({
-            "some random field": "",
-        }), "missing code"),
-        (json!({"code": 1}), "invalid code (integer)"),
+        (json!({"some random field": ""}), "missing code"),
         (json!({"code": -1}), "invalid code (negative)"),
-        (json!({"code": ""}), "invalid code (empty)"),
     ];
 
     // Act 
@@ -352,11 +352,11 @@ async fn patch_returns_400_for_invalid_data() {
 /**
  * Helper functions
  */
-fn assert_coupon_fields(code: String, expected_code: String, discount: i32, max_usage_count: Option<i32>){
+fn assert_coupon_fields(code: String, expected_code: String, discount: i32, max_usage_count: Option<i32>, expiration_date: Option<NaiveDateTime>){
     assert_eq!(code, expected_code);
     assert_eq!(discount, 10);
     assert_eq!(max_usage_count, Some(2));
-    // assert_eq!(expiration_date, Some(NaiveDateTime::from_str("31/12/2030 00:00:00").unwrap()));
+    assert_eq!(expiration_date, Some(NaiveDateTime::parse_from_str("2030-12-31 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()));
 }
 
 fn get_default_coupon_data(code: String) -> CouponUpdate {
@@ -364,7 +364,9 @@ fn get_default_coupon_data(code: String) -> CouponUpdate {
         id: 123456789,
         code,
         discount: 10,
-        max_usage_count: 2,
+        max_usage_count: Some(2),
+        expiration_date: Some(NaiveDateTime::parse_from_str("2030-12-31 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
+        active: true,
     };
 }
 
@@ -374,8 +376,11 @@ fn get_coupon_request_body(code: String) -> serde_json::Value {
     let coupon_request = CouponRequest {
         code: coupon.code,
         discount: coupon.discount,
-        max_usage_count: Some(coupon.max_usage_count),
+        active: true,
+        max_usage_count: coupon.max_usage_count,
+        expiration_date: coupon.expiration_date,
     };
+
     return json!(serde_json::to_value(&coupon_request).unwrap());
 }
 
