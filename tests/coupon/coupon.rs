@@ -241,15 +241,10 @@ async fn delete_by_id_returns_400_for_invalid_data() {
     let app = spawn_app().await;
 
     let test_cases = vec![
-        (json!({
-            "some random field": "",
-        }), "missing id"),
-        (json!({
-            "id": "string",
-        }), "invalid id (string)"),
-        (json!({
-            "id": -1,
-        }), "invalid id (negative)"),
+        (json!({"some random field": ""}), "missing id"),
+        (json!({"id": "string"}), "invalid id (string)"),
+        (json!({"id": "-1"}), "invalid id (negative)"),
+        (json!({"id": ""}), "invalid id (empty)"),
     ];
 
     // Act 
@@ -277,6 +272,7 @@ async fn delete_by_code_returns_400_for_invalid_data() {
         }), "missing code"),
         (json!({"code": 1}), "invalid code (integer)"),
         (json!({"code": -1}), "invalid code (negative)"),
+        (json!({"code": ""}), "invalid code (empty)"),
     ];
 
     // Act 

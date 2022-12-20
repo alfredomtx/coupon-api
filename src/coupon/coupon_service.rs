@@ -88,12 +88,12 @@ pub async fn update(coupon: Json<CouponUpdate>, pool: &MySqlPool) -> Result<(), 
 }
 
 pub async fn delete_by_id(id: i32, pool: &MySqlPool) -> Result<(), CouponError> {
-    coupon_repository::delete_by_id(id, pool).await
-        .context("Failed to delete by id")?;
-
     coupon_repository::get_by_id(id, pool).await
         .map_err(|error| CouponError::UnexpectedError(error.into()))?
         .ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with id `{}` not found", id))))?;
+
+    coupon_repository::delete_by_id(id, pool).await
+        .context("Failed to delete by id")?;
 
     coupon_repository::delete_by_id(id, &pool).await
         .map_err(|error| CouponError::UnexpectedError(error.into()))?;
@@ -101,12 +101,12 @@ pub async fn delete_by_id(id: i32, pool: &MySqlPool) -> Result<(), CouponError> 
 }
 
 pub async fn delete_by_code(code: String, pool: &MySqlPool) -> Result<(), CouponError> {
-    coupon_repository::delete_by_code(&code, pool).await
-        .context("Failed to delete by code")?;
-
     coupon_repository::get_by_code(&code, pool).await
         .map_err(|error| CouponError::UnexpectedError(error.into()))?
         .ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with code `{}` not found", &code))))?;
+
+    coupon_repository::delete_by_code(&code, pool).await
+        .context("Failed to delete by code")?;
             
     coupon_repository::delete_by_code(&code, &pool).await
         .map_err(|error| CouponError::UnexpectedError(error.into()))?;

@@ -53,10 +53,11 @@ async fn authenticate_returns_a_valid_cookie() {
     assert_eq!(200, response.status().as_u16());
     
     let cookie =  response.headers().get("Set-Cookie").unwrap().to_str().unwrap();
+    // remove the "Secure" string from the cookie to be able to use it in localhost without HTTPS
     let unsecure_cookie = cookie.replace(" Secure", "");
 
     // Act
-    let response = reqwest::Client::new()
+    let response = app.api_client
         .get(&format!("{}/hello", &app.address))
         .header("Cookie", unsecure_cookie)
         .send()
@@ -64,5 +65,6 @@ async fn authenticate_returns_a_valid_cookie() {
         .expect("Failed to execute request.");
 
     // Assert
+    // TODO: assert response body message
     assert_eq!(200, response.status().as_u16());
 }

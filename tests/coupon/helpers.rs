@@ -36,15 +36,14 @@ impl TestApp {
     pub async fn post_coupon(&self, body: serde_json::Value, error_for_status: bool) -> reqwest::Response {
         if (error_for_status){
             return self.api_client
-            .post(&format!("{}/coupon", &self.address))
-            .header("Cookie", &self.cookie)
-            .json(&body)
-            .send()
-            .await
-            .unwrap()
-            .error_for_status()
-            .expect("Failed to execute request");
-
+                .post(&format!("{}/coupon", &self.address))
+                .header("Cookie", &self.cookie)
+                .json(&body)
+                .send()
+                .await
+                .unwrap()
+                .error_for_status()
+                .expect("Failed to execute request");
         }
 
         return self.api_client
@@ -53,7 +52,7 @@ impl TestApp {
             .json(&body)
             .send()
             .await
-        .expect("Failed to execute request");
+            .expect("Failed to execute request");
     }
     
     pub async fn get_coupon(&self, endpoint: &str, body: serde_json::Value) -> reqwest::Response {
@@ -73,7 +72,7 @@ impl TestApp {
             .json(&body)
             .send()
             .await
-        .expect("Failed to execute request");
+            .expect("Failed to execute request");
     }
 
     pub async fn delete_coupon(&self, endpoint: &str, body: serde_json::Value) -> reqwest::Response {
@@ -83,18 +82,18 @@ impl TestApp {
             .json(&body)
             .send()
             .await
-        .expect("Failed to execute request");
+            .expect("Failed to execute request");
     }
 
     pub async fn authenticate_request(&self) -> reqwest::Response {
         return self.api_client
-        .post(&format!("{}/authenticate", &self.address))
-        .json(&serde_json::json!({
-            "api_key": &self.api_key
-        }))
-        .send()
-        .await
-        .expect("Failed to execute request.");
+            .post(&format!("{}/authenticate", &self.address))
+            .json(&serde_json::json!({
+                "api_key": &self.api_key
+            }))
+            .send()
+            .await
+            .expect("Failed to execute request.");
     }
 }
 
