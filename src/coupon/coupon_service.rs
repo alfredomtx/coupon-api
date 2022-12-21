@@ -57,7 +57,7 @@ pub async fn insert(coupon: Json<CouponRequest>, pool: &MySqlPool) -> Result<Cou
     };
 
     let inserted_id = coupon_repository::insert(coupon_insert, pool).await
-    .map_err(|e| CouponError::InternalError(anyhow!("Something went wrong and the coupon was not inserted.")))?;
+    .map_err(|e| CouponError::InternalError(anyhow!(format!("Something went wrong and the coupon was not inserted: {}", e))))?;
 
     let inserted_id = i32::try_from(inserted_id).or_else(|e| Err(CouponError::InternalError(anyhow!(format!("Failed to read inserted_id: {}", e)))))?;
 

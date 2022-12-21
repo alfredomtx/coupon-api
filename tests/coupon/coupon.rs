@@ -1,7 +1,7 @@
 use crate::helpers::{spawn_app};
-use chrono::NaiveDateTime;
-use coupon_api::coupon::{Coupon, CouponUpdate, CouponRequest};
-use rand::distributions::{Alphanumeric, DistString};
+use chrono::{NaiveDateTime};
+use coupon_api::coupon::{Coupon, CouponUpdate, CouponRequest, CouponResponse};
+use rand::{distributions::{Alphanumeric, DistString}, Rng};
 use serde_json::json;
 
 /**
@@ -11,19 +11,20 @@ use serde_json::json;
 async fn get_coupon_by_id_returns_a_coupon() {
     // Arrange
     let app = spawn_app().await;
-    let code = get_random_coupon_code();
-    let body = get_coupon_request_body(code.clone());
+
+    let coupon_request = get_coupon_request(get_random_coupon_code());
+    let body = get_coupon_request_json(&coupon_request);
     
     // Act
     // add the coupon before getting it
-    app.post_coupon(body, true).await;
+    let response = app.post_coupon(body, true).await;
+    let coupon_response = get_coupon_from_response(response).await;
 
-    let coupon = app.get_and_deserialize_coupon(1).await;
+    // request for the added coupon using its id
+    let coupon = app.get_and_deserialize_coupon(coupon_response.id).await;
 
     // Assert
-    // the `code` field we are not asserting here, since it is not guaranteed
-    // that the `post_coupon` added the first coupon(with id 1)
-    assert_coupon_fields(coupon.code.clone(), coupon.code, coupon.discount, coupon.max_usage_count, coupon.expiration_date);
+    assert_coupon_fields(coupon, coupon_request);
 }
 
 #[tokio::test]
@@ -31,18 +32,18 @@ async fn get_coupon_by_code_returns_a_coupon() {
     // Arrange
     let app = spawn_app().await;
     let code = get_random_coupon_code();
-    let body = get_coupon_request_body(code.clone());
+    let coupon_request = get_coupon_request(code.clone());
+    let body = get_coupon_request_json(&coupon_request);
     
     // Act
     // add the coupon before getting it
     app.post_coupon(body, true).await;
 
     let response = app.get_coupon("/code", json!({"code": code})).await;
-    let response_body = response.text().await.expect("failed to get response_body");
-    let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
+    let coupon = get_coupon_from_response(response).await;
 
     // Assert
-    assert_coupon_fields(coupon.code, code, coupon.discount, coupon.max_usage_count, coupon.expiration_date);
+     assert_coupon_fields(coupon, coupon_request);
 }
 
 #[tokio::test]
@@ -50,9 +51,11 @@ async fn get_all_coupons_returns_a_list_of_coupons() {
     // Arrange
     let app = spawn_app().await;
     let code1 = get_random_coupon_code();
-    let body1 = get_coupon_request_body(code1.clone());
+    let coupon_request1 = get_coupon_request(code1.clone());
+    let body1 = get_coupon_request_json(&coupon_request1);
     let code2 = get_random_coupon_code();
-    let body2 = get_coupon_request_body(code2.clone());
+    let coupon_request2 = get_coupon_request(code2.clone());
+    let body2 = get_coupon_request_json(&coupon_request2);
     
     // Act
     // add 2 coupons
@@ -67,10 +70,10 @@ async fn get_all_coupons_returns_a_list_of_coupons() {
     // Assert
     assert!(coupons.len() > 1);
 
-    // iterate through the cupons and get only the 2 coupon with the codes we added before
+    // iterate through the coupons and get only the 2 coupon with the codes we added before
     let added_coupons: Vec<Coupon> = coupons.into_iter()
-    .filter(|coupon| coupon.code == code1 || coupon.code == code2)
-    .collect();
+        .filter(|coupon| coupon.code == code1 || coupon.code == code2)
+        .collect();
 
     assert!(added_coupons.len() == 2);
 }
@@ -103,24 +106,47 @@ async fn get_coupon_not_found_returns_404(){
 /**
  * POST
  */
+ #[tokio::test]
+ async fn post_persists_and_returns_the_new_coupon() {
+     // Arrange
+     let app = spawn_app().await;
+     let coupon_request = get_coupon_request(get_random_coupon_code());
+     let body = get_coupon_request_json(&coupon_request);
+     
+     // Act
+     let response = app.post_coupon(body, false).await;
+     let response_status = response.status().as_u16();
+     let response_body = response.text().await.expect("failed to get response_body");
+ 
+     // Assert
+     assert_eq!(201, response_status);
+ 
+     let coupon: CouponResponse = serde_json::from_str(&response_body).unwrap();
+     
+     assert_coupon_fields(coupon, coupon_request);
+ }
+
 #[tokio::test]
-async fn post_persists_and_returns_the_new_coupon() {
+async fn post_returns_500_if_coupon_already_exists() {
     // Arrange
     let app = spawn_app().await;
-    let code = get_random_coupon_code();   
-    let body = get_coupon_request_body(code.clone());
+    let coupon_request = get_coupon_request(get_random_coupon_code());
+    let body = get_coupon_request_json(&coupon_request);
     
-    // Act
-    let response = app.post_coupon(body, false).await;
+    // Act 1
+    let response = app.post_coupon(body.clone(), false).await;
     let response_status = response.status().as_u16();
-    let response_body = response.text().await.expect("failed to get response_body");
-
-    // Assert
+    
+    // Assert 1
     assert_eq!(201, response_status);
 
-    let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
-    
-    assert_coupon_fields(coupon.code, code, coupon.discount, coupon.max_usage_count, coupon.expiration_date);
+    // Act 2
+    // adding the same coupon twice
+    let response = app.post_coupon(body, false).await;
+    let response_status = response.status().as_u16();
+
+    // Assert 2
+    assert_eq!(500, response_status);
 }
 
 #[tokio::test]
@@ -159,20 +185,21 @@ async fn post_returns_400_for_invalid_data() {
 async fn patch_updates_the_coupon_successfully() {
     // Arrange
     let app = spawn_app().await;
-    let code = get_random_coupon_code();
-    let body = get_coupon_request_body(code.clone());
+    let coupon_request = get_coupon_request(get_random_coupon_code());
+    let body = get_coupon_request_json(&coupon_request);
     
     // Act
     // add a coupon
     let added_coupon = app.post_and_deserialize_coupon(body).await; 
-        
+
     // update the added coupon with new data
-    let body = json!({   
-        "id": added_coupon.id,
-        "code": "CouponWithUpdatedData",
-        "discount": 99,
-        "max_usage_count": 123,
-    });
+    let mut coupon_update = get_default_coupon_data("CouponWithUpdatedData".to_string());
+    coupon_update.id = added_coupon.id;
+    coupon_update.discount = 99;
+    coupon_update.max_usage_count = Some(123);
+    coupon_update.active = false;
+
+    let body = json!(serde_json::to_value(&coupon_update).unwrap());
     
     let response = app.patch_coupon(body).await;
     let response_status = response.status().as_u16();
@@ -180,14 +207,31 @@ async fn patch_updates_the_coupon_successfully() {
     // Assert
     assert_eq!(200, response_status);
 
-    let updated_coupon = app.get_and_deserialize_coupon(added_coupon.id).await;
+    let coupon = app.get_and_deserialize_coupon(added_coupon.id).await;
 
-    assert_eq!(added_coupon.id, updated_coupon.id);
-    assert_eq!(updated_coupon.code, "CouponWithUpdatedData".to_string());
-    assert_eq!(updated_coupon.discount, 99);
-    assert_eq!(updated_coupon.max_usage_count, Some(123));  
-    // TODO: assert that `date_updated` has changed
+    assert_coupon_fields(coupon.clone(), coupon_update.into());
+    // date_updated should have value
+    let _ = coupon.date_updated.unwrap();
 }
+
+#[tokio::test]
+async fn patch_coupon_not_found_returns_404(){
+    // Arrange
+    let app = spawn_app().await;
+
+    let mut coupon_update = get_default_coupon_data("".to_string());
+    // assign random id that won't be found in database
+    coupon_update.id = rand::thread_rng().gen_range(100000..i32::MAX);
+
+    let body = json!(serde_json::to_value(&coupon_update).unwrap());
+
+    let response = app.patch_coupon(body).await;
+    let response_status = response.status().as_u16();
+
+    // Assert
+    assert_eq!(404, response_status);
+}
+
 
 /**
  * DELETE
@@ -196,7 +240,8 @@ async fn patch_updates_the_coupon_successfully() {
 async fn delete_coupon_by_id_successfully() {
     // Arrange
     let app = spawn_app().await;
-    let body = get_coupon_request_body(get_random_coupon_code().clone());
+    let coupon_request = get_coupon_request(get_random_coupon_code());
+    let body = get_coupon_request_json(&coupon_request);
     
     // Act
     // add a coupon
@@ -219,7 +264,8 @@ async fn delete_coupon_by_id_successfully() {
 async fn delete_coupon_by_code_successfully() {
     // Arrange
     let app = spawn_app().await;
-    let body = get_coupon_request_body(get_random_coupon_code().clone());
+    let coupon_request = get_coupon_request(get_random_coupon_code());
+    let body = get_coupon_request_json(&coupon_request);
     // dbg!(&body);
     
     // Act
@@ -228,7 +274,7 @@ async fn delete_coupon_by_code_successfully() {
     // delete added coupon
     let response = app.delete_coupon("/code", json!({"code": added_coupon.code.clone()})).await;
     let response_status = response.status().as_u16();
-    let response_body = response.text().await.expect("failed to get response_body");
+
     assert_eq!(200, response_status);
 
     // try to get the deleted coupon
@@ -352,11 +398,12 @@ async fn patch_returns_400_for_invalid_data() {
 /**
  * Helper functions
  */
-fn assert_coupon_fields(code: String, expected_code: String, discount: i32, max_usage_count: Option<i32>, expiration_date: Option<NaiveDateTime>){
-    assert_eq!(code, expected_code);
-    assert_eq!(discount, 10);
-    assert_eq!(max_usage_count, Some(2));
-    assert_eq!(expiration_date, Some(NaiveDateTime::parse_from_str("2030-12-31 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()));
+fn assert_coupon_fields(coupon_response: CouponResponse, coupon_expected: CouponRequest){
+    assert_eq!(coupon_response.code, coupon_expected.code);
+    assert_eq!(coupon_response.discount, coupon_expected.discount);
+    assert_eq!(coupon_response.active, coupon_expected.active);
+    assert_eq!(coupon_response.max_usage_count, coupon_expected.max_usage_count);
+    assert_eq!(coupon_response.expiration_date, coupon_expected.expiration_date);
 }
 
 fn get_default_coupon_data(code: String) -> CouponUpdate {
@@ -371,28 +418,36 @@ fn get_default_coupon_data(code: String) -> CouponUpdate {
 }
 
 // Return a CouponRequest struct as JSON
-fn get_coupon_request_body(code: String) -> serde_json::Value {
+fn get_coupon_request_json(coupon_request: &CouponRequest) -> serde_json::Value {
+    return json!(serde_json::to_value(&coupon_request).unwrap());
+}
+
+fn get_coupon_request(code: String) -> CouponRequest {
     let coupon = get_default_coupon_data(code);
-    let coupon_request = CouponRequest {
+    return CouponRequest {
         code: coupon.code,
         discount: coupon.discount,
         active: true,
         max_usage_count: coupon.max_usage_count,
         expiration_date: coupon.expiration_date,
     };
-
-    return json!(serde_json::to_value(&coupon_request).unwrap());
 }
 
 fn get_random_coupon_code() -> String {
     return Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
 }
 
+async fn get_coupon_from_response(response: reqwest::Response) -> CouponResponse {
+    let response_body = response.text().await.expect("failed to get response_body");
+    let coupon_response: CouponResponse = serde_json::from_str(&response_body).unwrap();
+    return coupon_response;
+}
+
 // #[tokio::test]
 // async fn coupon_fails_if_there_is_a_fatal_database_error() {
 //     // Arrange
 //     let app = spawn_app().await;
-//     let body = get_coupon_request_body(None);
+//     let body = get_coupon_request_json(None);
 
 //     // Sabotage the database
 //     sqlx::query!("DROP TABLE coupon;",)

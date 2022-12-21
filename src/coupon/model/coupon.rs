@@ -36,7 +36,7 @@ pub struct CouponRequest {
     pub expiration_date: Option<NaiveDateTime>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CouponResponse {
     pub id: i32,
     pub code: String,
@@ -74,7 +74,19 @@ pub enum CouponError {
 
 impl CouponInsert {
     pub fn from_coupon(coupon: Coupon) -> CouponInsert {
-        return CouponInsert {
+        return Self {
+            code: coupon.code,
+            discount: coupon.discount,
+            active: coupon.active,
+            max_usage_count: coupon.max_usage_count,
+            expiration_date: coupon.expiration_date,
+        };
+    }
+}
+
+impl CouponRequest {
+    pub fn from_coupon_update(coupon: CouponUpdate) -> CouponRequest {
+        return Self {
             code: coupon.code,
             discount: coupon.discount,
             active: coupon.active,
@@ -100,6 +112,36 @@ impl TryFrom<Coupon> for CouponResponse {
         });
     }
 }
+
+
+impl TryFrom<CouponUpdate> for CouponResponse {
+    type Error = String;
+    fn try_from(coupon: CouponUpdate) -> Result<Self, Self::Error> {
+        return Ok( Self {
+            id: coupon.id,
+            code: coupon.code,
+            discount: coupon.discount,
+            active: coupon.active,
+            max_usage_count: coupon.max_usage_count,
+            expiration_date: coupon.expiration_date,
+            date_created: None,
+            date_updated: None,
+        });
+    }
+}
+
+impl From<CouponUpdate> for CouponRequest {
+    fn from(coupon: CouponUpdate) -> Self {
+        return Self {
+            code: coupon.code,
+            discount: coupon.discount,
+            active: coupon.active,
+            max_usage_count: coupon.max_usage_count,
+            expiration_date: coupon.expiration_date,
+        };
+    }
+}
+
 
 impl ResponseError for CouponError {
     fn status_code(&self) -> StatusCode {

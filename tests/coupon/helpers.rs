@@ -1,7 +1,8 @@
 use coupon_api::{
     configuration::{get_configuration, DatabaseSettings},
     telemetry::{get_subscriber, init_subscriber},
-    startup::{get_connection_pool, Application}, coupon::Coupon,
+    startup::{get_connection_pool, Application},
+    coupon::{CouponResponse},
 };
 use std::panic;
 use serde_json::json;
@@ -19,18 +20,17 @@ pub struct TestApp {
 }
 
 impl TestApp {
-    pub async fn post_and_deserialize_coupon(&self, body: serde_json::Value) -> Coupon {
+    pub async fn post_and_deserialize_coupon(&self, body: serde_json::Value) -> CouponResponse {
         let response = self.post_coupon(body, true).await;
         let response_body = response.text().await.expect("Failed to get response_body");
-    dbg!(&response_body);
-    let coupon: Coupon = serde_json::from_str(&response_body).expect("Failed to deserialize response to coupon");
+        let coupon: CouponResponse = serde_json::from_str(&response_body).expect("Failed to deserialize response to coupon");
         return coupon;
     }
 
-    pub async fn get_and_deserialize_coupon(&self, id: i32) -> Coupon {
+    pub async fn get_and_deserialize_coupon(&self, id: i32) -> CouponResponse {
         let response = self.get_coupon("/id", json!({"id": id})).await;
         let response_body = response.text().await.expect("failed to get response_body");
-        let coupon: Coupon = serde_json::from_str(&response_body).unwrap();
+        let coupon: CouponResponse = serde_json::from_str(&response_body).unwrap();
         return coupon;
     }
 
