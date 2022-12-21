@@ -36,6 +36,19 @@ RUN apt-get update -y \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
+
+# Installing Protobuff, necessary for crypto dependencies
+RUN wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+RUN tar xzf protobuf-2.6.1.tar.gz
+RUN cd protobuf-2.6.1
+RUN sudo apt-get update
+RUN sudo apt-get install build-essential
+RUN sudo ./configure
+RUN sudo make
+RUN sudo make check
+RUN sudo make install 
+RUN sudo ldconfig
+RUN protoc --version
 # Copy the compiled binary from the builder environment
 # to our runtime environment
 COPY --from=builder /app/target/release/zero2prod zero2prod
