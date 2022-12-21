@@ -15,17 +15,16 @@ path = "src/lib.rs"
 [dev-dependencies]
 once_cell = "1.12.0"
 serde_json = "1"
-tokio = { version = "1", features = ["macros", "rt"] }
+tokio = { version = "1.23.0", features = ["macros", "rt"] }
 rand = "0.8.5"
 
 [dependencies]
 # runtime
 actix-web = { version = "4.2.1", features = ["cookies"] }
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-mysql = "23.0.0"
+tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"] }
 # error handling
 thiserror = "1.0.37"
-anyhow = "1.0.65"
+anyhow = "1.0.68"
 #serde
 serde_json = "1"
 serde = "1.0.147"
@@ -39,7 +38,7 @@ tracing = {version = "0.1.35", features = ["log"]}
 tracing-log = "0.1.3"
 tracing-bunyan-formatter = "0.3.3"
 tracing-subscriber = { version = "0.3.14", features = ["registry", "env-filter"] }
-tracing-actix-web = "0.6.0"
+tracing-actix-web = "0.7.0"
 # others
 config = "0.13.2"
 url = "2.2.2"
@@ -47,10 +46,6 @@ secrecy = { version = "0.8.0", features = ["serde"] }
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls", "cookies"] }
 uuid = { version = "1.1.2", features = ["v4"] }
 chrono = "0.4.23"
-argon2 = {version = "0.4.1", features = ["std"]}
-
-
-
 
 
 [dependencies.sqlx]

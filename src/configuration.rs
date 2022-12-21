@@ -35,24 +35,24 @@ pub struct DatabaseSettings {
     pub port: u16,
     pub host: String,
     pub database_name: String,
-    pub test_db_name: String,
+    pub test_database_name: String,
     // Determine if we demand the connection to be encrypted or not
     pub require_ssl: bool
 }
 
 impl DatabaseSettings {
     pub fn without_db(&self) -> MySqlConnectOptions {
-        MySqlConnectOptions::new()
+        return MySqlConnectOptions::new()
             .host(&self.host)
             .username(&self.username)
             .password(&self.password.expose_secret())
             .port(self.port)
-            .ssl_mode(MySqlSslMode::Disabled)
+            .ssl_mode(MySqlSslMode::Disabled);
     }
 
     pub fn with_db(&self, test_database: bool) -> MySqlConnectOptions {
         let options = self.without_db()
-            .database(if (test_database) { &self.test_db_name } else { &self.database_name } );
+            .database(if (test_database) { &self.test_database_name } else { &self.database_name } );
         return options;
     }
 }
@@ -61,7 +61,7 @@ pub fn get_configuration() -> Result<Settings, ConfigError> {
     let base_path = env::current_dir().expect("Failed to determine the current directory");
     let configuration_directory = base_path.join("configuration");
     
-    // Detect the running environment s
+    // Detect the running environment
     // Default to `local` if unspecified
     let environment: Environment = env::var("APP_ENVIRONMENT")
         .unwrap_or_else(|_| "local".into())
@@ -78,19 +78,32 @@ pub fn get_configuration() -> Result<Settings, ConfigError> {
         // Add in settings from environment variables (with a prefix of APP and '__' as separator)
         // E.g. `APP_APPLICATION__PORT=5001 would set `Settings.application.port`
         .add_source(config::Environment::with_prefix("APP").prefix_separator("_").separator("__"));
-    
+
+    match environment {
+        Environment::Production => {
+            set_port_heroku();
+        }
+        _ => {}
+    }
+
     let settings = builder.build()?;
-    
-    settings.try_deserialize::<Settings>()
+
+    return settings.try_deserialize::<Settings>();
 }
 
 
+pub fn set_port_heroku() {
+    // Get the port from Heroku's `PORT` environment variable
+    let port = env::var("PORT").expect("$PORT is not set.");
+    env::set_var("APP_APPLICATION__PORT", port);
+}
+
 impl Environment {
     pub fn as_str(&self) -> &'static str {
-        match self {
+        return match self {
             Environment::Local => "local",
             Environment::Production => "production"
-        }
+        };
     }
 }
 
@@ -98,14 +111,14 @@ impl TryFrom<String> for Environment {
     type Error = String;
 
     fn try_from(s: String) -> Result<Self, Self::Error> {
-        match s.to_lowercase().as_str() {
+        return match s.to_lowercase().as_str() {
             "local" => Ok(Self::Local),
             "production" => Ok(Self::Production),
             other => Err(format!(
                 "{} is not a supported environment. Use either 'local' or 'production'.",
                 other
             )),
-        }
+        };
     }
 
 }

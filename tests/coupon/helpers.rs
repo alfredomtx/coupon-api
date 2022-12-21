@@ -168,7 +168,7 @@ pub async fn spawn_app() -> TestApp {
         address,
         port: application_port,
         db_pool: get_connection_pool(&configuration.database, true),
-        db_name: configuration.database.test_db_name,
+        db_name: configuration.database.test_database_name,
         api_client: client,
         api_key: configuration.application.api_key,
         cookie: unsecure_cookie,
@@ -181,17 +181,17 @@ pub async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
         .await
         .expect("Failed to connect to database.");
 
-    if (!config.test_db_name.contains("TEST")){
+    if (!config.test_database_name.contains("TEST")){
         panic!("`TEST` string not found in Test Database name, is it correct?");
     }
 
     connection
-        .execute(format!(r#"DROP DATABASE IF EXISTS {};"#, config.test_db_name).as_str())
+        .execute(format!(r#"DROP DATABASE IF EXISTS {};"#, config.test_database_name).as_str())
         .await
         .expect("Failed to drop test database.");
         
     connection
-        .execute(format!(r#"CREATE DATABASE IF NOT EXISTS {};"#, config.test_db_name).as_str())
+        .execute(format!(r#"CREATE DATABASE IF NOT EXISTS {};"#, config.test_database_name).as_str())
         .await
         .expect("Failed to create test database.");
     

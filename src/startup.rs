@@ -1,8 +1,6 @@
 use crate::{
     configuration::{DatabaseSettings, Settings},
-    authentication::{
-        hello, authenticate, User
-    },
+    authentication::{hello, authenticate, User},
     coupon::{
         health_check, get_coupon_by_code, get_coupon_by_id, get_all_coupons, add_coupon, update_coupon, delete_coupon_by_code, delete_coupon_by_id,
     },
@@ -26,7 +24,6 @@ use jwt_compact::alg::Ed25519;
 pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key: String) -> Result<Server, std::io::Error> {
     let key_pair = KeyPair::random();
     
-
     let cookie_signer = CookieSigner::new()
         .signing_key(key_pair.secret_key().clone())
         .algorithm(Ed25519)
@@ -50,10 +47,10 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
             .wrap(TracingLogger::default())
 
             .app_data(Data::new(authority.clone()))
+            .app_data(Data::new(cookie_signer.clone()))
             .app_data(db_pool.clone())
             .app_data(base_url.clone())
             .app_data(api_key.clone())
-            .app_data(Data::new(cookie_signer.clone()))
 
             /*
                 all access routes (not authenticated)
@@ -80,18 +77,11 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
                     .service(delete_coupon_by_code)
                     .wrap(AuthenticationService::new(authority.clone()))
                 )
-
     })
     .listen(listener)?
     .run();
 
     return Ok(server);
-}
-
-pub fn get_connection_pool(configuration: &DatabaseSettings, test_database: bool) -> MySqlPool {
-    return MySqlPoolOptions::new()
-    .acquire_timeout(std::time::Duration::from_secs(2))
-    .connect_lazy_with(configuration.with_db(test_database));
 }
 
 
@@ -108,7 +98,6 @@ pub struct ApplicationBaseUrl(pub String);
 pub struct ApplicationApiKey(pub String);
 
 impl Application {
-
     pub async fn build(configuration: Settings, test_database: bool) -> Result<Self, std::io::Error> {
         let connection_pool = get_connection_pool(&configuration.database, test_database);
 
@@ -140,5 +129,10 @@ impl Application {
     pub async fn run_until_stopped(self) -> Result<(), std::io::Error> {
         return self.server.await;
     }
-    
+}
+
+pub fn get_connection_pool(configuration: &DatabaseSettings, test_database: bool) -> MySqlPool {
+    return MySqlPoolOptions::new()
+        .acquire_timeout(std::time::Duration::from_secs(2))
+        .connect_lazy_with(configuration.with_db(test_database));
 }

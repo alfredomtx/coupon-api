@@ -1,0 +1,507 @@
+{
+  "db": "MySQL",
+  "1db0885c40dd6a72a03d580987b17f4fa6a286873b7aa674849ecc48bf05ac58": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 515
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "code",
+          "ordinal": 1,
+          "type_info": {
+            "char_set": 224,
+            "flags": {
+              "bits": 4101
+            },
+            "max_size": 1020,
+            "type": "VarString"
+          }
+        },
+        {
+          "name": "discount",
+          "ordinal": 2,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 4097
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "max_usage_count",
+          "ordinal": 3,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 0
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "active: bool",
+          "ordinal": 4,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 1
+            },
+            "max_size": 1,
+            "type": "Tiny"
+          }
+        },
+        {
+          "name": "expiration_date: NaiveDateTime",
+          "ordinal": 5,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 128
+            },
+            "max_size": 19,
+            "type": "Datetime"
+          }
+        },
+        {
+          "name": "date_created: Option<NaiveDateTime>",
+          "ordinal": 6,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 4225
+            },
+            "max_size": 19,
+            "type": "Datetime"
+          }
+        },
+        {
+          "name": "date_updated: NaiveDateTime",
+          "ordinal": 7,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 9376
+            },
+            "max_size": 19,
+            "type": "Timestamp"
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "SELECT id\n        , code\n        , discount \n        , max_usage_count\n        , active as `active: bool`\n        , expiration_date as `expiration_date: NaiveDateTime`\n        , date_created as `date_created: Option<NaiveDateTime>`\n        , date_updated as `date_updated: NaiveDateTime`\n        FROM coupon WHERE ? = ?\n        "
+  },
+  "3ecd1013eaece2bbb7c555777b8029ab17823d8d4ef978786cc84c0ff96e8677": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM coupon\n            WHERE code = ?\n        "
+  },
+  "6d273d9ed504cee2156e7d64ab0556d84e1751265e19ad351f08fb278cc3b93e": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 6
+      }
+    },
+    "query": "\n            UPDATE coupon SET\n            code = ?,\n            discount = ?,\n            active = ?,\n            max_usage_count = ?,\n            expiration_date = ?\n            WHERE id = ?\n        "
+  },
+  "70ffc1639f9ca71ccaca0c9ccda61351560bbe5ed12f3a5de4c3dcec1d20e799": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 515
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "code",
+          "ordinal": 1,
+          "type_info": {
+            "char_set": 224,
+            "flags": {
+              "bits": 4101
+            },
+            "max_size": 1020,
+            "type": "VarString"
+          }
+        },
+        {
+          "name": "discount",
+          "ordinal": 2,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 4097
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "max_usage_count",
+          "ordinal": 3,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 0
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "active: bool",
+          "ordinal": 4,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 1
+            },
+            "max_size": 1,
+            "type": "Tiny"
+          }
+        },
+        {
+          "name": "expiration_date: NaiveDateTime",
+          "ordinal": 5,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 128
+            },
+            "max_size": 19,
+            "type": "Datetime"
+          }
+        },
+        {
+          "name": "date_created: Option<NaiveDateTime>",
+          "ordinal": 6,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 4225
+            },
+            "max_size": 19,
+            "type": "Datetime"
+          }
+        },
+        {
+          "name": "date_updated: NaiveDateTime",
+          "ordinal": 7,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 9376
+            },
+            "max_size": 19,
+            "type": "Timestamp"
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT id\n        , code\n        , discount \n        , max_usage_count\n        , active as `active: bool`\n        , expiration_date as `expiration_date: NaiveDateTime`\n        , date_created as `date_created: Option<NaiveDateTime>`\n        , date_updated as `date_updated: NaiveDateTime`\n        FROM coupon WHERE id = ?\n        "
+  },
+  "89027e747d055e2e089fc13416ffc8b7373c3e230a597e5de7ccd5f7d9f08b0a": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 515
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "code",
+          "ordinal": 1,
+          "type_info": {
+            "char_set": 224,
+            "flags": {
+              "bits": 4101
+            },
+            "max_size": 1020,
+            "type": "VarString"
+          }
+        },
+        {
+          "name": "discount",
+          "ordinal": 2,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 4097
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "max_usage_count",
+          "ordinal": 3,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 0
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "active: bool",
+          "ordinal": 4,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 1
+            },
+            "max_size": 1,
+            "type": "Tiny"
+          }
+        },
+        {
+          "name": "expiration_date: NaiveDateTime",
+          "ordinal": 5,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 128
+            },
+            "max_size": 19,
+            "type": "Datetime"
+          }
+        },
+        {
+          "name": "date_created: Option<NaiveDateTime>",
+          "ordinal": 6,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 4225
+            },
+            "max_size": 19,
+            "type": "Datetime"
+          }
+        },
+        {
+          "name": "date_updated: NaiveDateTime",
+          "ordinal": 7,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 9376
+            },
+            "max_size": 19,
+            "type": "Timestamp"
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "SELECT id\n        , code\n        , discount \n        , max_usage_count\n        , active as `active: bool`\n        , expiration_date as `expiration_date: NaiveDateTime`\n        , date_created as `date_created: Option<NaiveDateTime>`\n        , date_updated as `date_updated: NaiveDateTime`\n        FROM coupon"
+  },
+  "9ae22c887609355899ef50473a07dca5de72156fb90c1a0d92f089ca54e7d11f": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM coupon\n            WHERE id = ?\n        "
+  },
+  "9b335458cc41223a390ee71ee1dc3a025918a1a22dc056e05b7b0ef55d1faa73": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 5
+      }
+    },
+    "query": "\n            INSERT INTO coupon \n            (code, discount, active, max_usage_count, expiration_date) \n            VALUES \n            (?, ?, ?, ?, ?)\n        "
+  },
+  "f23242c095d8dd1840483fa3f4181b4d138c3c8a9f3e6de9565e0e7110fb3369": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 515
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "code",
+          "ordinal": 1,
+          "type_info": {
+            "char_set": 224,
+            "flags": {
+              "bits": 4101
+            },
+            "max_size": 1020,
+            "type": "VarString"
+          }
+        },
+        {
+          "name": "discount",
+          "ordinal": 2,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 4097
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "max_usage_count",
+          "ordinal": 3,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 0
+            },
+            "max_size": 11,
+            "type": "Long"
+          }
+        },
+        {
+          "name": "active: bool",
+          "ordinal": 4,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 1
+            },
+            "max_size": 1,
+            "type": "Tiny"
+          }
+        },
+        {
+          "name": "expiration_date: NaiveDateTime",
+          "ordinal": 5,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 128
+            },
+            "max_size": 19,
+            "type": "Datetime"
+          }
+        },
+        {
+          "name": "date_created: Option<NaiveDateTime>",
+          "ordinal": 6,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 4225
+            },
+            "max_size": 19,
+            "type": "Datetime"
+          }
+        },
+        {
+          "name": "date_updated: NaiveDateTime",
+          "ordinal": 7,
+          "type_info": {
+            "char_set": 63,
+            "flags": {
+              "bits": 9376
+            },
+            "max_size": 19,
+            "type": "Timestamp"
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT id\n        , code\n        , discount \n        , max_usage_count\n        , active as `active: bool`\n        , expiration_date as `expiration_date: NaiveDateTime`\n        , date_created as `date_created: Option<NaiveDateTime>`\n        , date_updated as `date_updated: NaiveDateTime`\n        FROM coupon WHERE code = ?\n        "
+  }
+}
