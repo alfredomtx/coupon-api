@@ -40,7 +40,7 @@ RUN apt-get update -y \
 
 # Copy the compiled binary from the builder environment
 # to our runtime environment
-COPY --from=builder /app/target/release/zero2prod zero2prod
+COPY --from=builder /app/target/release/coupon-api coupon-api
 # We need the configuration file at runtime!
 COPY configuration configuration
 ENV APP_ENVIRONMENT production
