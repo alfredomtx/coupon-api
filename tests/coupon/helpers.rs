@@ -4,6 +4,10 @@ use coupon_api::{
     startup::{get_connection_pool, Application},
     coupon::{CouponResponse},
 };
+use reqwest::{
+    Method,
+    header:: HeaderMap,
+};
 use std::panic;
 use serde_json::json;
 use sqlx::{MySqlPool, MySqlConnection, Connection, Executor};
@@ -16,12 +20,11 @@ pub struct TestApp {
     pub port: u16,
     pub api_client: reqwest::Client,
     pub api_key: String,
-    pub cookie: String,
 }
 
 impl TestApp {
     pub async fn post_and_deserialize_coupon(&self, body: serde_json::Value) -> CouponResponse {
-        let response = self.post_coupon(body, true).await;
+        let response = self.post_coupon(body).await;
         let response_body = response.text().await.expect("Failed to get response_body");
         let coupon: CouponResponse = serde_json::from_str(&response_body).expect("Failed to deserialize response to coupon");
         return coupon;
@@ -34,68 +37,31 @@ impl TestApp {
         return coupon;
     }
 
-    pub async fn post_coupon(&self, body: serde_json::Value, error_for_status: bool) -> reqwest::Response {
-        // if (error_for_status){
-        //     return self.api_client
-        //         .post(&format!("{}/coupon", &self.address))
-        //         .header("Cookie", &self.cookie)
-        //         .json(&body)
-        //         .send()
-        //         .await
-        //         .unwrap()
-        //         .error_for_status()
-        //         .expect("Failed to execute request");
-        // }
-
-        return self.api_client
-            .post(&format!("{}/coupon", &self.address))
-            .header("Cookie", &self.cookie)
-            .json(&body)
-            .send()
-            .await
-            .expect("Failed to execute POST request");
+    pub async fn post_coupon(&self, body: serde_json::Value) -> reqwest::Response {
+        return self.request_coupon(Method::POST, "", body).await;
     }
     
     pub async fn get_coupon(&self, endpoint: &str, body: serde_json::Value) -> reqwest::Response {
-        return self.api_client
-            .get(&format!("{}/coupon{}", &self.address, endpoint))
-            .header("Cookie", &self.cookie)
-            .json(&body)
-            .send()
-            .await
-            .expect("Failed to execute GET request");
+        return self.request_coupon(Method::GET, endpoint, body).await;
     }
         
     pub async fn patch_coupon(&self, body: serde_json::Value) -> reqwest::Response {
-        return self.api_client
-            .patch(&format!("{}/coupon", &self.address))
-            .header("Cookie", &self.cookie)
-            .json(&body)
-            .send()
-            .await
-            .expect("Failed to execute PATCH request");
+        return self.request_coupon(Method::PATCH, "", body).await;
     }
 
     pub async fn delete_coupon(&self, endpoint: &str, body: serde_json::Value) -> reqwest::Response {
+        return self.request_coupon(Method::DELETE, endpoint, body).await;
+    }
+
+    pub async fn request_coupon(&self, method: Method, endpoint: &str, body: serde_json::Value) -> reqwest::Response {
         return self.api_client
-            .delete(&format!("{}/coupon{}", &self.address, endpoint))
-            .header("Cookie", &self.cookie)
+            .request(method.clone(), &format!("{}/coupon{}", &self.address, endpoint))
             .json(&body)
             .send()
             .await
-            .expect("Failed to execute DELETE request");
+            .expect(format!("Failed to execute {} request", method.to_string()).as_str());
     }
 
-    pub async fn authenticate_request(&self) -> reqwest::Response {
-        return self.api_client
-            .post(&format!("{}/authenticate", &self.address))
-            .json(&serde_json::json!({
-                "api_key": &self.api_key
-            }))
-            .send()
-            .await
-            .expect("Failed to execute AUTH request.");
-    }
 }
 
 
@@ -143,24 +109,13 @@ pub async fn spawn_app() -> TestApp {
     let address = format!("http://127.0.0.1:{}", application.port());
     let _ = tokio::spawn(application.run_until_stopped());
 
-    // TODO: refactor this
-    // get the cookie with JWT to use in the requests.
-    let response = reqwest::Client::new()
-        .post(&format!("{}/authenticate", &address))
-        .json(&serde_json::json!({
-            "api_key": &configuration.application.api_key
-        }))
-        .send()
-        .await
-        .expect("Failed to execute `/authenticate` request.");
-
-    let cookie =  response.headers().get("Set-Cookie").unwrap().to_str().unwrap();
-    // remove the " Secure" tag from the cookies, since in localhost I'm not using HTTPS
-    let unsecure_cookie = cookie.replace(" Secure", "");
+    // setting default authorization header
+    let mut headers = HeaderMap::new();
+    headers.insert("Authorization", configuration.application.api_key.parse().unwrap());
 
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
-        .cookie_store(true)
+        .default_headers(headers)
         .build()
         .unwrap();
 
@@ -171,7 +126,6 @@ pub async fn spawn_app() -> TestApp {
         db_name: configuration.database.test_database_name,
         api_client: client,
         api_key: configuration.application.api_key,
-        cookie: unsecure_cookie,
     };
 }
 

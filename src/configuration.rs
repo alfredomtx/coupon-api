@@ -4,21 +4,22 @@ use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::mysql::MySqlConnectOptions;
 use sqlx::mysql::MySqlSslMode;
 use std::env;
+use serde::{Deserialize};
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
 }
 
 /// The possible runtime environment for our application.
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub enum Environment {
     Local,
     Production
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
@@ -27,7 +28,7 @@ pub struct ApplicationSettings {
     pub api_key: String
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct DatabaseSettings {
     pub username: String,
     pub password: Secret<String>,

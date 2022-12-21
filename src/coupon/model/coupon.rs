@@ -72,30 +72,6 @@ pub enum CouponError {
     UnexpectedError(#[from] anyhow::Error),
 }
 
-impl CouponInsert {
-    pub fn from_coupon(coupon: Coupon) -> CouponInsert {
-        return Self {
-            code: coupon.code,
-            discount: coupon.discount,
-            active: coupon.active,
-            max_usage_count: coupon.max_usage_count,
-            expiration_date: coupon.expiration_date,
-        };
-    }
-}
-
-impl CouponRequest {
-    pub fn from_coupon_update(coupon: CouponUpdate) -> CouponRequest {
-        return Self {
-            code: coupon.code,
-            discount: coupon.discount,
-            active: coupon.active,
-            max_usage_count: coupon.max_usage_count,
-            expiration_date: coupon.expiration_date,
-        };
-    }
-}
-
 // Convert a Coupon to a CouponResponse
 impl TryFrom<Coupon> for CouponResponse {
     type Error = String;
@@ -112,7 +88,6 @@ impl TryFrom<Coupon> for CouponResponse {
         });
     }
 }
-
 
 impl TryFrom<CouponUpdate> for CouponResponse {
     type Error = String;
@@ -141,7 +116,6 @@ impl From<CouponUpdate> for CouponRequest {
         };
     }
 }
-
 
 impl ResponseError for CouponError {
     fn status_code(&self) -> StatusCode {

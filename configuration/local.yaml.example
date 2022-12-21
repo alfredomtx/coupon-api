@@ -1,8 +1,8 @@
 application:
   host: 127.0.0.1
   base_url: "http://127.0.0.1"
-  # API KEY that used to validate the request on `/authenticate`
-  api_key: "test123"
+  # API KEY to validate in every request, must start with the Authorization header must "Bearer"
+  api_key: "Bearer test123"
 
   
 database:

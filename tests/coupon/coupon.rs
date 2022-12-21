@@ -17,7 +17,7 @@ async fn get_coupon_by_id_returns_a_coupon() {
     
     // Act
     // add the coupon before getting it
-    let response = app.post_coupon(body, true).await;
+    let response = app.post_coupon(body).await;
     let coupon_response = get_coupon_from_response(response).await;
 
     // request for the added coupon using its id
@@ -37,7 +37,7 @@ async fn get_coupon_by_code_returns_a_coupon() {
     
     // Act
     // add the coupon before getting it
-    app.post_coupon(body, true).await;
+    app.post_coupon(body).await;
 
     let response = app.get_coupon("/code", json!({"code": code})).await;
     let coupon = get_coupon_from_response(response).await;
@@ -59,8 +59,8 @@ async fn get_all_coupons_returns_a_list_of_coupons() {
     
     // Act
     // add 2 coupons
-    app.post_coupon(body1, true).await;
-    app.post_coupon(body2, true).await;
+    app.post_coupon(body1).await;
+    app.post_coupon(body2).await;
 
     // get all coupons
     let response = app.get_coupon("", json!({})).await;
@@ -114,7 +114,7 @@ async fn get_coupon_not_found_returns_404(){
      let body = get_coupon_request_json(&coupon_request);
      
      // Act
-     let response = app.post_coupon(body, false).await;
+     let response = app.post_coupon(body).await;
      let response_status = response.status().as_u16();
      let response_body = response.text().await.expect("failed to get response_body");
  
@@ -134,7 +134,7 @@ async fn post_returns_500_if_coupon_already_exists() {
     let body = get_coupon_request_json(&coupon_request);
     
     // Act 1
-    let response = app.post_coupon(body.clone(), false).await;
+    let response = app.post_coupon(body.clone()).await;
     let response_status = response.status().as_u16();
     
     // Assert 1
@@ -142,7 +142,7 @@ async fn post_returns_500_if_coupon_already_exists() {
 
     // Act 2
     // adding the same coupon twice
-    let response = app.post_coupon(body, false).await;
+    let response = app.post_coupon(body).await;
     let response_status = response.status().as_u16();
 
     // Assert 2
@@ -165,7 +165,7 @@ async fn post_returns_400_for_invalid_data() {
 
     // Act 
     for (invalid_body, error_message) in test_cases {
-        let response = app.post_coupon(invalid_body, false).await;
+        let response = app.post_coupon(invalid_body).await;
 
         // Assert
         assert_eq!(
@@ -456,7 +456,7 @@ async fn get_coupon_from_response(response: reqwest::Response) -> CouponResponse
 //         .unwrap();
 
 //     // Act 
-//     let response = app.post_coupon(body, false).await;
+//     let response = app.post_coupon(body).await;
 
 //     // Assert
 //     assert_eq!(response.status().as_u16(), 500);

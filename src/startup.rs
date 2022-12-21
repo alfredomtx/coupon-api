@@ -1,13 +1,14 @@
 use crate::{
     configuration::{DatabaseSettings, Settings},
-    authentication::{hello, authenticate, User},
+    authentication::{validator},
     coupon::{
-        health_check, get_coupon_by_code, get_coupon_by_id, get_all_coupons, add_coupon, update_coupon, delete_coupon_by_code, delete_coupon_by_id,
+        health_check, get_coupon_by_code, get_coupon_by_id, get_all_coupons, add_coupon, update_coupon,
+        delete_coupon_by_code, delete_coupon_by_id,
     },
 };
 use actix_web::{
     App, HttpServer,
-    dev::Server, 
+    dev::{Server},
     web::{Data, scope},
 };
 use sqlx::{
@@ -16,26 +17,10 @@ use sqlx::{
 };
 use tracing_actix_web::TracingLogger;
 use std::net::TcpListener;
-use actix_jwt_auth_middleware::{Authority, CookieSigner, AuthenticationService};
-use exonum_crypto::KeyPair;
-use jwt_compact::alg::Ed25519;
-
 
 pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key: String) -> Result<Server, std::io::Error> {
-    let key_pair = KeyPair::random();
-    
-    let cookie_signer = CookieSigner::new()
-        .signing_key(key_pair.secret_key().clone())
-        .algorithm(Ed25519)
-        .build()
-        .unwrap();
 
-    let authority = Authority::<User, _, _, _>::new()
-        .refresh_authorizer(|| async move { Ok(()) })
-        .cookie_signer(Some(cookie_signer.clone()))
-        .verifying_key(key_pair.public_key())
-        .build()
-        .unwrap();
+    let api_key_auth = actix_web_httpauth::middleware::HttpAuthentication::with_fn(validator);
     
     let db_pool = Data::new(db_pool);
     let base_url = Data::new(ApplicationBaseUrl(base_url));
@@ -46,8 +31,6 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
             // TracingLogger instead of default actix_web logger to return with request_id (and other information aswell)
             .wrap(TracingLogger::default())
 
-            .app_data(Data::new(authority.clone()))
-            .app_data(Data::new(cookie_signer.clone()))
             .app_data(db_pool.clone())
             .app_data(base_url.clone())
             .app_data(api_key.clone())
@@ -55,7 +38,6 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
             /*
                 all access routes (not authenticated)
             */ 
-            .service(authenticate)
             .service(health_check)
 
             /*
@@ -67,7 +49,6 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
                 // we need this scope so we can exclude the login service
                 // from being wrapped by the jwt middleware
                 scope("")
-                    .service(hello)
                     .service(get_all_coupons)
                     .service(get_coupon_by_id)
                     .service(get_coupon_by_code)
@@ -75,7 +56,7 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
                     .service(update_coupon)
                     .service(delete_coupon_by_id)
                     .service(delete_coupon_by_code)
-                    .wrap(AuthenticationService::new(authority.clone()))
+                    .wrap(api_key_auth.clone())
                 )
     })
     .listen(listener)?
