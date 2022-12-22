@@ -14,3 +14,5 @@ The application has been deployed on Heroku in a Docker container, and is live a
 Since it requires authentication, you won't be able to interact with it. I will work on a demo version of it where others can interact with it in a test database in the future.
 
 In this repository, you can also find the `Coupon API.postman_collection.json` file, which you can import on Postman to have a template for the API calls.
+
+![image](https://user-images.githubusercontent.com/20379136/209049283-4579cdae-10bb-4780-bec3-606c7f22b2dd.png)
