@@ -1,7 +1,7 @@
 # 🦀 What is this project?
 This is a new personal project I'm working on, a Coupon API for [OldBot](http://oldbot.com.br/)(my other project) where I will validate coupons and license discounts.
 
-The main technologies used are:
+The main technologies and features are:
 - [Rust](https://www.rust-lang.org/)
 - [Actix Web](https://actix.rs/) framework
 - [Tokio](https://tokio.rs/) as asynchronous runtime
@@ -9,6 +9,7 @@ The main technologies used are:
 - [MySQL](https://www.mysql.com/) database
 - [Docker](https://www.docker.com/) container
 - Simple Bearer token authentication
+- Unit and integration test for all API endpoints
 
 The application has been deployed on Heroku in a Docker container, and is live at https://coupon-api-oldbot.herokuapp.com/.
 Since it requires authentication, you won't be able to interact with it. I will work on a demo version of it where others can interact with it in a test database in the future.
