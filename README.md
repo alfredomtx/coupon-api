@@ -12,6 +12,7 @@ The main technologies and features are:
 - Unit and integration test for all API endpoints
 
 The application has been deployed on [Heroku](https://www.heroku.com/) in a Docker container, and is live at https://coupon-api-oldbot.herokuapp.com/.
+
 Since it requires authentication, you won't be able to interact with it. I will work on a demo version of it where others can interact with it in a test database in the future.
 
 
