@@ -11,6 +11,6 @@ The main technologies used are:
 - Simple Bearer token authentication
 
 The application has been deployed on Heroku in a Docker container, and is live at https://coupon-api-oldbot.herokuapp.com/.
-Since it requires authentication, you won't be able to interact with it. I will work on a demo version of it where others can interact with it in a test database.
+Since it requires authentication, you won't be able to interact with it. I will work on a demo version of it where others can interact with it in a test database in the future.
 
 In this repository, you can also find the `Coupon API.postman_collection.json` file, which you can import on Postman to have a template for the API calls.
