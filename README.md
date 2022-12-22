@@ -1,5 +1,5 @@
 # 🦀 What is this project?
-This is a new personal project I'm working on, a Coupon API for (OldBot)[http://oldbot.com.br/](my other project) where I will validate coupons and license discounts.
+This is a new personal project I'm working on, a Coupon API for [OldBot](http://oldbot.com.br/)(my other project) where I will validate coupons and license discounts.
 
 The main technologies used are:
     - Rust.
