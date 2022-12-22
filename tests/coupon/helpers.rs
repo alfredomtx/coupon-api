@@ -67,7 +67,7 @@ impl TestApp {
 
 // Ensure that the `tracing` stack is only initialised once using `once_cell`
 static TRACING: Lazy<()> = Lazy::new(|| {
-    let default_filter_level = "debug".to_string();
+    let default_filter_level = "info".to_string();
     let subscriber_name = "test".to_string();
 
     // We cannot assign the output of `get_subscriber` to a variable based on the value
