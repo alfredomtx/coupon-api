@@ -1,5 +1,5 @@
 use coupon_api::{
-    configuration::{get_configuration, DatabaseSettings},
+    configuration::{get_configuration, DatabaseSettings, Settings},
     telemetry::{get_subscriber, init_subscriber},
     startup::{get_connection_pool, Application},
     coupon::{CouponResponse},
@@ -83,34 +83,36 @@ pub async fn spawn_app() -> TestApp {
     // Launch the application as a background task
     let application = Application::build(configuration.clone(), true)
         .await
-        .expect("Failed to build application.");
+        .expect("Failed to build TEST application.");
     let application_port = application.port();
 
     // Get the port before spawning the application
     let address = format!("http://127.0.0.1:{}", application.port());
     let _ = tokio::spawn(application.run_until_stopped());
 
-    // setting default authorization header
-    let mut headers = HeaderMap::new();
-    headers.insert("Authorization", configuration.application.api_key.parse().unwrap());
-
-    let client = reqwest::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .default_headers(headers)
-        .build()
-        .unwrap();
-
     return TestApp {
         address,
         port: application_port,
         db_pool: get_connection_pool(&configuration.database, true),
-        db_name: configuration.database.test_database_name,
-        api_client: client,
+        db_name: configuration.database.test_database_name.clone(),
+        api_client: create_reqwest_client(&configuration),
         api_key: configuration.application.api_key,
     };
 }
 
-pub async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
+fn create_reqwest_client(configuration: &Settings) -> reqwest::Client {
+    // setting default Authorization header
+    let mut headers = HeaderMap::new();
+    headers.insert("Authorization", configuration.application.api_key.parse().unwrap());
+
+    return reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .default_headers(headers)
+        .build()
+        .unwrap();
+}
+
+async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
     // Create database
     let mut connection = MySqlConnection::connect_with(&config.without_db())
         .await

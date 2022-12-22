@@ -1,9 +1,9 @@
 application:
   host: 127.0.0.1
   base_url: "http://127.0.0.1"
-  # API KEY to validate in every request, must start with the Authorization header must "Bearer"
+  # API KEY to validate in every request, the `Authorization` header must be present and its value start with "Bearer"
+  # e.g: {"Authorization": "Bearer tokentest123"}
   api_key: "Bearer test123"
-
   
 database:
   require_ssl: false
