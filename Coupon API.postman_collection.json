@@ -43,7 +43,7 @@
 			"response": []
 		},
 		{
-			"name": "coupon",
+			"name": "coupon/all",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -54,12 +54,13 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/coupon",
+					"raw": "{{base_url}}/coupon/all",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
-						"coupon"
+						"coupon",
+						"all"
 					]
 				}
 			},
@@ -67,9 +68,6 @@
 		},
 		{
 			"name": "coupon/id",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
 			"request": {
 				"method": "GET",
 				"header": [
@@ -79,23 +77,19 @@
 						"type": "text"
 					}
 				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"id\": 1\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
-					"raw": "{{base_url}}/coupon/id",
+					"raw": "{{base_url}}/coupon?id=1",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
-						"coupon",
-						"id"
+						"coupon"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "1"
+						}
 					]
 				}
 			},
@@ -103,9 +97,6 @@
 		},
 		{
 			"name": "coupon/code",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
 			"request": {
 				"method": "GET",
 				"header": [
@@ -115,23 +106,19 @@
 						"type": "text"
 					}
 				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"code\": \"Test\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
-					"raw": "{{base_url}}/coupon/code",
+					"raw": "{{base_url}}/coupon?code=test",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
-						"coupon",
-						"code"
+						"coupon"
+					],
+					"query": [
+						{
+							"key": "code",
+							"value": "test"
+						}
 					]
 				}
 			},
@@ -297,6 +284,16 @@
 		{
 			"key": "token",
 			"value": "Bearer test123",
+			"type": "string"
+		},
+		{
+			"key": "test",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "test2",
+			"value": "",
 			"type": "string"
 		}
 	]

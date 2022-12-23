@@ -2,7 +2,7 @@ use crate::{
     configuration::{DatabaseSettings, Settings},
     authentication::{validator},
     coupon::{
-        health_check, get_coupon_by_code, get_coupon_by_id, get_all_coupons, add_coupon, update_coupon,
+        health_check, get_coupon, get_all_coupons, add_coupon, update_coupon,
         delete_coupon_by_code, delete_coupon_by_id,
     },
 };
@@ -50,8 +50,7 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
                 // from being wrapped by the jwt middleware
                 scope("")
                     .service(get_all_coupons)
-                    .service(get_coupon_by_id)
-                    .service(get_coupon_by_code)
+                    .service(get_coupon)
                     .service(add_coupon)
                     .service(update_coupon)
                     .service(delete_coupon_by_id)

@@ -39,7 +39,7 @@ async fn get_coupon_by_code_returns_a_coupon() {
     // add the coupon before getting it
     app.post_coupon(body).await;
 
-    let response = app.get_coupon("/code", json!({"code": code})).await;
+    let response = app.get_coupon("", Some(vec![("code", code)]) ).await;
     let coupon = get_coupon_from_response(response).await;
 
     // Assert
@@ -63,9 +63,9 @@ async fn get_all_coupons_returns_a_list_of_coupons() {
     app.post_coupon(body2).await;
 
     // get all coupons
-    let response = app.get_coupon("", json!({})).await;
+    let response = app.get_coupon("/all", None).await;
     let response_body = response.text().await.expect("failed to get response_body");
-    let coupons: Vec<Coupon> = serde_json::from_str(&response_body).unwrap();
+    let coupons: Vec<Coupon> = serde_json::from_str(&response_body).expect("Failed to parse CouponResponse from response.");
 
     // Assert
     assert!(coupons.len() > 1);
@@ -84,8 +84,8 @@ async fn get_coupon_not_found_returns_404(){
     let app = spawn_app().await;
 
     let test_cases = vec![
-        (json!({"id": 123456789}), "not found by id", "/id"),
-        (json!({"code": "code that does not exist"}), "not found by code", "/code")
+        (Some(vec![("id", "123456789".to_string())]), "not found by id", "/id"),
+        (Some(vec![("code", "code that does not exist".to_string())]), "not found by code", "/code")
     ];
 
     // Act 
@@ -121,7 +121,7 @@ async fn get_coupon_not_found_returns_404(){
      // Assert
      assert_eq!(201, response_status);
  
-     let coupon: CouponResponse = serde_json::from_str(&response_body).unwrap();
+     let coupon: CouponResponse = serde_json::from_str(&response_body).expect("Failed to parse CouponResponse from response.");
      
      assert_coupon_fields(coupon, coupon_request);
  }
@@ -253,7 +253,7 @@ async fn delete_coupon_by_id_successfully() {
     assert_eq!(200, response_status);
 
     // try to get the deleted coupon
-    let response = app.get_coupon("/id", json!({"id": added_coupon.id})).await;
+    let response = app.get_coupon("", Some(vec![("id", added_coupon.id.to_string())]) ).await;
     let response_status = response.status().as_u16();
 
     // Assert 2
@@ -278,7 +278,7 @@ async fn delete_coupon_by_code_successfully() {
     assert_eq!(200, response_status);
 
     // try to get the deleted coupon
-    let response = app.get_coupon("/code", json!({"code": added_coupon.code})).await;
+    let response = app.get_coupon("", Some(vec![("code", added_coupon.code)]) ).await;
     let response_status = response.status().as_u16();
 
     // Assert 2
@@ -439,7 +439,7 @@ fn get_random_coupon_code() -> String {
 
 async fn get_coupon_from_response(response: reqwest::Response) -> CouponResponse {
     let response_body = response.text().await.expect("failed to get response_body");
-    let coupon_response: CouponResponse = serde_json::from_str(&response_body).unwrap();
+    let coupon_response: CouponResponse = serde_json::from_str(&response_body).expect("Failed to parse CouponResponse from response.");
     return coupon_response;
 }
 

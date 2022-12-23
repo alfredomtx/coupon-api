@@ -5,6 +5,11 @@ use actix_web::{
 use serde::{Serialize, Deserialize};
 // use chrono::NaiveDateTime;
 use sqlx::types::chrono::{NaiveDateTime};
+#[derive(Debug, Deserialize)]
+pub struct CouponQueryRequest {
+    pub id: Option<String>,
+    pub code: Option<String>,
+}
 
 #[derive(Serialize, Debug, Deserialize)]
 pub struct Coupon {

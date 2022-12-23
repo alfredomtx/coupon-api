@@ -1,4 +1,4 @@
-use super::model::{CouponRequest, CouponError, CouponUpdate};
+use super::model::{CouponRequest, CouponError, CouponUpdate, CouponQueryRequest};
 use super::coupon_service;
 use actix_web::{
     web, get, post, patch, delete, HttpResponse, Responder,
@@ -16,27 +16,18 @@ pub struct Code { code: String }
 #[tracing::instrument(
     name = "Get all coupons", skip(pool)
 )]
-#[get("/coupon")]
+#[get("/coupon/all")]
 pub async fn get_all_coupons(pool: Data::<MySqlPool>) -> Result<impl Responder, CouponError> {
     let coupons = coupon_service::get_all(&pool).await?;
     return Ok(web::Json(coupons));
 }
 
 #[tracing::instrument(
-    name = "Get coupon by id", skip(pool)
+    name = "Get coupon", skip(pool)
 )]
-#[get("/coupon/id")]
-pub async fn get_coupon_by_id(request: web::Json<Id>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
-    let coupon = coupon_service::get_by_id(request.id, &pool).await?;
-    return Ok(HttpResponse::Ok().json(coupon));
-}
-
-#[tracing::instrument(
-    name = "Get coupon by code", skip(pool)
-)]
-#[get("/coupon/code")]
-pub async fn get_coupon_by_code(request: web::Json<Code>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
-    let coupon = coupon_service::get_by_code(request.code.clone(), &pool).await?;
+#[get("/coupon")]
+pub async fn get_coupon(params: web::Query<CouponQueryRequest>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
+    let coupon = coupon_service::get_by_id_or_code(params.into_inner(), &pool).await?;
     return Ok(HttpResponse::Ok().json(coupon));
 }
 

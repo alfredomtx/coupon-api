@@ -9,7 +9,6 @@ use reqwest::{
     header:: HeaderMap,
 };
 use std::panic;
-use serde_json::json;
 use sqlx::{MySqlPool, MySqlConnection, Connection, Executor};
 use once_cell::sync::Lazy;
 
@@ -26,14 +25,14 @@ impl TestApp {
     pub async fn post_and_deserialize_coupon(&self, body: serde_json::Value) -> CouponResponse {
         let response = self.post_coupon(body).await;
         let response_body = response.text().await.expect("Failed to get response_body");
-        let coupon: CouponResponse = serde_json::from_str(&response_body).expect("Failed to deserialize response to coupon");
+        let coupon: CouponResponse = serde_json::from_str(&response_body).expect("Failed to parse CouponResponse from response.");
         return coupon;
     }
 
     pub async fn get_and_deserialize_coupon(&self, id: i32) -> CouponResponse {
-        let response = self.get_coupon("/id", json!({"id": id})).await;
+        let response = self.get_coupon("", Some(vec![("id", id.to_string())]) ).await;
         let response_body = response.text().await.expect("failed to get response_body");
-        let coupon: CouponResponse = serde_json::from_str(&response_body).unwrap();
+        let coupon: CouponResponse = serde_json::from_str(&response_body).expect("Failed to parse CouponResponse from response.");
         return coupon;
     }
 
@@ -41,8 +40,22 @@ impl TestApp {
         return self.request_coupon(Method::POST, "", body).await;
     }
     
-    pub async fn get_coupon(&self, endpoint: &str, body: serde_json::Value) -> reqwest::Response {
-        return self.request_coupon(Method::GET, endpoint, body).await;
+    pub async fn get_coupon(&self, endpoint: &str, query: Option<Vec<(&str, String)>>) -> reqwest::Response {
+        if let Some(params) = query {
+            return self.api_client
+                .get(&format!("{}/coupon{}", &self.address, endpoint))
+                .query(&params)
+                .send()
+                .await
+                .expect("Failed to perform GET request");
+                // .error_for_status()
+                // .unwrap();
+        }
+        return self.api_client
+            .get(&format!("{}/coupon{}", &self.address, endpoint))
+            .send()
+            .await
+            .expect("Failed to perform GET request");
     }
         
     pub async fn patch_coupon(&self, body: serde_json::Value) -> reqwest::Response {
@@ -59,7 +72,7 @@ impl TestApp {
             .json(&body)
             .send()
             .await
-            .expect(format!("Failed to execute {} request", method.to_string()).as_str());
+            .expect(format!("Failed to perform {} request", method.to_string()).as_str());
     }
 
 }

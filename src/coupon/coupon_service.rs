@@ -1,10 +1,9 @@
 use super::model::{CouponRequest, CouponResponse, CouponError, CouponInsert, CouponUpdate};
-use super::{coupon_repository};
+use super::{coupon_repository, CouponQueryRequest};
 use sqlx::{MySqlPool};
 use actix_web::web::Json;
 use anyhow::{Context, Result, anyhow};
 use std::convert::TryFrom;
-
 
 pub async fn get_all(pool: &MySqlPool) -> Result<Vec<CouponResponse>, CouponError> {
     let coupons = coupon_repository::get_all(pool).await
@@ -46,6 +45,23 @@ pub async fn get_by_code(code: String, pool: &MySqlPool) -> Result<CouponRespons
     let coupon_response = coupon.try_into().map_err(|e| CouponError::InternalError(anyhow!(format!("Failed to create CouponResponse: {}", e))))?;
     return Ok(coupon_response);
 }
+
+pub async fn get_by_id_or_code(params: CouponQueryRequest, pool: &MySqlPool) -> Result<CouponResponse, CouponError> {
+    // if the `id` param is present and it is an integer, then we get by id, otherwise by code
+    if let Some(id_param) = params.id {
+        match id_param.parse::<i32>() {
+            Ok(id) => return get_by_id(id, pool).await,
+            Err(_) => {},
+        }
+    };
+
+    if let Some(code) = params.code {
+        return get_by_code(code, pool).await;
+    }
+
+    return Err(CouponError::ValidationError("Both `id` and `code` params are missing from URL query, one is required.".to_string()));
+}
+
 
 pub async fn insert(coupon: Json<CouponRequest>, pool: &MySqlPool) -> Result<CouponResponse, anyhow::Error> {
     let coupon_insert = CouponInsert {
