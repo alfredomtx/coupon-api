@@ -67,7 +67,7 @@
 			"response": []
 		},
 		{
-			"name": "coupon/id",
+			"name": "coupon?id",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -96,7 +96,7 @@
 			"response": []
 		},
 		{
-			"name": "coupon/code",
+			"name": "coupon?code",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -107,7 +107,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/coupon?code=test",
+					"raw": "{{base_url}}/coupon?code=Test",
 					"host": [
 						"{{base_url}}"
 					],
@@ -117,7 +117,7 @@
 					"query": [
 						{
 							"key": "code",
-							"value": "test"
+							"value": "Test"
 						}
 					]
 				}
