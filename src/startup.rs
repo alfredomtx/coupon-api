@@ -1,14 +1,14 @@
 use crate::{
     configuration::{DatabaseSettings, Settings},
-    authentication::{validator},
+    authentication::validator,
     coupon::{
         health_check, get_coupon, get_all_coupons, add_coupon, update_coupon,
-        delete_coupon_by_code, delete_coupon_by_id,
+        delete_coupon_by_code, delete_coupon_by_id, verify_coupon
     },
 };
 use actix_web::{
     App, HttpServer,
-    dev::{Server},
+    dev::Server,
     web::{Data, scope},
 };
 use sqlx::{
@@ -55,6 +55,7 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
                     .service(update_coupon)
                     .service(delete_coupon_by_id)
                     .service(delete_coupon_by_code)
+                    .service(verify_coupon)
                     .wrap(api_key_auth.clone())
                 )
     })

@@ -1,5 +1,5 @@
 use crate::helpers::{spawn_app};
-use chrono::{NaiveDateTime};
+use chrono::{NaiveDateTime, Utc, Datelike};
 use coupon_api::coupon::{Coupon, CouponUpdate, CouponRequest, CouponResponse};
 use rand::{distributions::{Alphanumeric, DistString}, Rng};
 use serde_json::json;
@@ -17,7 +17,7 @@ async fn get_coupon_by_id_returns_a_coupon() {
     
     // Act
     // add the coupon before getting it
-    let response = app.post_coupon(body).await;
+    let response = app.post_coupon(body, true).await;
     let coupon_response = get_coupon_from_response(response).await;
 
     // request for the added coupon using its id
@@ -37,7 +37,7 @@ async fn get_coupon_by_code_returns_a_coupon() {
     
     // Act
     // add the coupon before getting it
-    app.post_coupon(body).await;
+    app.post_coupon(body, true).await;
 
     let response = app.get_coupon("", Some(vec![("code", code)]) ).await;
     let coupon = get_coupon_from_response(response).await;
@@ -59,8 +59,8 @@ async fn get_all_coupons_returns_a_list_of_coupons() {
     
     // Act
     // add 2 coupons
-    app.post_coupon(body1).await;
-    app.post_coupon(body2).await;
+    app.post_coupon(body1, true).await;
+    app.post_coupon(body2, true).await;
 
     // get all coupons
     let response = app.get_coupon("/all", None).await;
@@ -114,7 +114,7 @@ async fn get_coupon_not_found_returns_404(){
      let body = get_coupon_request_json(&coupon_request);
      
      // Act
-     let response = app.post_coupon(body).await;
+     let response = app.post_coupon(body, false).await;
      let response_status = response.status().as_u16();
      let response_body = response.text().await.expect("failed to get response_body");
  
@@ -134,7 +134,7 @@ async fn post_returns_500_if_coupon_already_exists() {
     let body = get_coupon_request_json(&coupon_request);
     
     // Act 1
-    let response = app.post_coupon(body.clone()).await;
+    let response = app.post_coupon(body.clone(), false).await;
     let response_status = response.status().as_u16();
     
     // Assert 1
@@ -142,7 +142,7 @@ async fn post_returns_500_if_coupon_already_exists() {
 
     // Act 2
     // adding the same coupon twice
-    let response = app.post_coupon(body).await;
+    let response = app.post_coupon(body, false).await;
     let response_status = response.status().as_u16();
 
     // Assert 2
@@ -165,7 +165,7 @@ async fn post_returns_400_for_invalid_data() {
 
     // Act 
     for (invalid_body, error_message) in test_cases {
-        let response = app.post_coupon(invalid_body).await;
+        let response = app.post_coupon(invalid_body, false).await;
 
         // Assert
         assert_eq!(
@@ -395,9 +395,80 @@ async fn patch_returns_400_for_invalid_data() {
     }
 }
 
+
+/**
+ * Verify Coupon
+ */
+#[tokio::test]
+async fn verify_coupon_returns_true_for_a_valid_coupon() {
+    // Arrange
+    let coupon_request = get_coupon_request(get_random_coupon_code());
+    // Act
+    let response_body = start_verify_test_and_post_coupon(coupon_request).await;
+
+    // Assert
+    assert_eq!(response_body, "true");
+}
+
+#[tokio::test]
+async fn verify_coupon_returns_false_if_not_active() {
+    // Arrange
+    let mut coupon_request = get_coupon_request(get_random_coupon_code());
+    coupon_request.active = false;
+    // Act
+    let response_body = start_verify_test_and_post_coupon(coupon_request).await;
+
+    // Assert
+    assert_eq!(response_body, "false");
+}
+
+#[tokio::test]
+async fn verify_coupon_returns_false_if_expired() {
+    // Arrange
+    let mut coupon_request = get_coupon_request(get_random_coupon_code());
+    coupon_request.expiration_date = Some(NaiveDateTime::parse_from_str("2000-12-31 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap());
+    // Act
+    let response_body = start_verify_test_and_post_coupon(coupon_request).await;
+    
+    // Assert
+    assert_eq!(response_body, "false");
+}
+
+#[tokio::test]
+async fn verify_coupon_validates_if_today_is_friday() {
+    // Arrange
+    // "SEXTOU" is a special coupon that is only valid on Friday
+    let coupon_request = get_coupon_request("SEXTOU".to_string());
+    // Act
+    let response_body = start_verify_test_and_post_coupon(coupon_request).await;
+    
+    // Assert
+    let weekday = Utc::now().date_naive().weekday().to_string();
+    if (weekday.to_uppercase() == "FRIDAY"){
+        assert_eq!(response_body, "true");
+    } else {
+        assert_eq!(response_body, "false");
+    }
+}
+
+
+
 /**
  * Helper functions
  */
+async fn start_verify_test_and_post_coupon(coupon_request: CouponRequest) -> String {
+    let app = spawn_app().await;
+
+    let body = get_coupon_request_json(&coupon_request);
+    // add the coupon before verifying it
+    app.post_coupon(body, true).await;
+
+    let response = app.get_coupon("/verify", Some(vec![("code", coupon_request.code)]) ).await;
+    let response_body = response.text().await.expect("Failed to get response_body");
+
+    return response_body;
+}
+
 fn assert_coupon_fields(coupon_response: CouponResponse, coupon_expected: CouponRequest){
     assert_eq!(coupon_response.code, coupon_expected.code);
     assert_eq!(coupon_response.discount, coupon_expected.discount);

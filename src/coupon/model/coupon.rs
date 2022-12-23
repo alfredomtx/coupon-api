@@ -5,19 +5,13 @@ use actix_web::{
 use serde::{Serialize, Deserialize};
 // use chrono::NaiveDateTime;
 use sqlx::types::chrono::{NaiveDateTime};
-#[derive(Debug, Deserialize)]
-pub struct CouponQueryRequest {
-    pub id: Option<String>,
-    pub code: Option<String>,
-}
-
 #[derive(Serialize, Debug, Deserialize)]
 pub struct Coupon {
     pub id: i32,
     pub code: String,
     pub discount: i32,
     pub active: bool,
-    pub max_usage_count: Option<i32>,
+    pub max_usage_count: Option<i32>, // not actually being used currently, we will also need a new field to track the `current usage` count for the coupon
     pub expiration_date: Option<NaiveDateTime>,
     pub date_created: Option<NaiveDateTime>,
     pub date_updated: Option<NaiveDateTime>,
@@ -30,6 +24,12 @@ pub struct CouponInsert {
     pub active: bool,
     pub max_usage_count: Option<i32>,
     pub expiration_date: Option<NaiveDateTime>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CouponQueryRequest {
+    pub id: Option<String>,
+    pub code: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

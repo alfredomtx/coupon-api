@@ -67,4 +67,13 @@ pub async fn delete_coupon_by_code(request: web::Json<Code>, pool: Data::<MySqlP
     return Ok(HttpResponse::Ok().finish());
 }
 
+#[tracing::instrument(
+    name = "Verify coupon", skip(pool)
+)]
+#[get("/coupon/verify")]
+pub async fn verify_coupon(params: web::Query<CouponQueryRequest>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
+    let valid_coupon = coupon_service::is_valid(params.into_inner(), &pool).await?;
+    return Ok(HttpResponse::Ok().body(valid_coupon.to_string()));
+}
+
 
