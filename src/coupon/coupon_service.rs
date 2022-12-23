@@ -32,7 +32,7 @@ pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<CouponResponse, Coup
 
     let coupon = result.ok_or( CouponError::NotFoundError(anyhow!(format!("Coupon with id `{}` not found", id))))?;
 
-    let coupon_response = coupon.try_into().map_err(|e| CouponError::InternalError(anyhow!(format!("Failed to create CouponResponse: {}", e))))?;
+    let coupon_response = coupon.try_into().map_err(|e| CouponError::InternalError(anyhow!(format!("Failed to parse CouponResponse: {}", e))))?;
     return Ok(coupon_response);
 }
 
@@ -42,7 +42,7 @@ pub async fn get_by_code(code: String, pool: &MySqlPool) -> Result<CouponRespons
 
     let coupon = result.ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with code `{}` not found", code))))?;
 
-    let coupon_response = coupon.try_into().map_err(|e| CouponError::InternalError(anyhow!(format!("Failed to create CouponResponse: {}", e))))?;
+    let coupon_response = coupon.try_into().map_err(|e| CouponError::InternalError(anyhow!(format!("Failed to parse CouponResponse: {}", e))))?;
     return Ok(coupon_response);
 }
 
@@ -82,7 +82,7 @@ pub async fn insert(coupon: Json<CouponRequest>, pool: &MySqlPool) -> Result<Cou
 
     let coupon = inserted_coupon.ok_or(CouponError::NotFoundError(anyhow!(format!("Inserted coupon with id `{}` not found", inserted_id))))?;
 
-    let coupon_response = coupon.try_into().map_err(|e| CouponError::InternalError(anyhow!(format!("Failed to create CouponResponse: {}", e))))?;
+    let coupon_response = coupon.try_into().map_err(|e| CouponError::InternalError(anyhow!(format!("Failed to parse CouponResponse: {}", e))))?;
     return Ok(coupon_response);
 }
 
