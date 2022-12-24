@@ -150,6 +150,7 @@ async fn post_returns_500_if_coupon_already_exists() {
 }
 
 #[tokio::test]
+// TODO: validate discount higher than 90
 async fn post_returns_400_for_invalid_data() {
     // Arrange
     let app = spawn_app().await;
@@ -193,10 +194,11 @@ async fn patch_updates_the_coupon_successfully() {
     let added_coupon = app.post_and_deserialize_coupon(body).await; 
 
     // update the added coupon with new data
-    let mut coupon_update = get_default_coupon_data("CouponWithUpdatedData".to_string());
+    let mut coupon_update = get_default_coupon_data(added_coupon.code);
     coupon_update.id = added_coupon.id;
-    coupon_update.discount = 99;
+    coupon_update.discount = 66;
     coupon_update.max_usage_count = Some(123);
+    coupon_update.expiration_date = Some(NaiveDateTime::parse_from_str("2100-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap());
     coupon_update.active = false;
 
     let body = json!(serde_json::to_value(&coupon_update).unwrap());
@@ -210,9 +212,39 @@ async fn patch_updates_the_coupon_successfully() {
     let coupon = app.get_and_deserialize_coupon(added_coupon.id).await;
 
     assert_coupon_fields(coupon.clone(), coupon_update.into());
-    // date_updated should have value
+    // `date_updated` field now should have value
     let _ = coupon.date_updated.unwrap();
 }
+
+#[tokio::test]
+async fn patch_do_not_update_the_code() {
+    // Arrange
+    let app = spawn_app().await;
+    let coupon_request = get_coupon_request(get_random_coupon_code());
+    let body = get_coupon_request_json(&coupon_request);
+    
+    // Act
+    // add a coupon
+    let added_coupon = app.post_and_deserialize_coupon(body).await; 
+
+    // update the added coupon with new `code`
+    let mut coupon_update = get_default_coupon_data(get_random_coupon_code());
+    coupon_update.id = added_coupon.id;
+
+    let body = json!(serde_json::to_value(&coupon_update).unwrap());
+    
+    let response = app.patch_coupon(body).await;
+    let response_status = response.status().as_u16();
+        
+    // Assert
+    assert_eq!(200, response_status);
+
+    let coupon = app.get_and_deserialize_coupon(added_coupon.id).await;
+
+    // the code of the added coupon should not be updated
+    assert_ne!(coupon.code, coupon_update.code);
+}
+
 
 #[tokio::test]
 async fn patch_coupon_not_found_returns_404(){
@@ -231,6 +263,69 @@ async fn patch_coupon_not_found_returns_404(){
     // Assert
     assert_eq!(404, response_status);
 }
+
+#[tokio::test]
+async fn patch_returns_404_for_coupon_not_found(){
+    // Arrange
+    let app = spawn_app().await;
+    let coupon = get_default_coupon_data(get_random_coupon_code());
+    let body = json!(serde_json::to_value(&coupon).unwrap());
+
+    // Act 
+    let response = app.patch_coupon(body).await;
+
+    // Assert
+    assert_eq!(
+        404,
+        response.status().as_u16(),
+        "patch` did not fail with 404 Not Found."
+    );
+}
+
+#[tokio::test]
+// TODO: validate discount higher than 90
+async fn patch_returns_400_for_invalid_data() {
+    // Arrange
+    let app = spawn_app().await;
+
+    let test_cases = vec![
+        (json!({
+            "id": "string",
+            "code": "test",
+            "discount": 1,
+        }), "invalid id (string)"),
+        (json!({
+            "id": -1,
+            "code": "test",
+            "discount": 1,
+        }), "invalid id (negative)"),
+        (json!({
+            "code": "test",
+            "discount": 1,
+        }), "missing id"),
+        (json!({"discount": 1}), "missing code"),
+        (json!({"code": 1}), "missing discount"),
+        (json!({"discount": "a"}), "invalid discount (string)"),
+        (json!({"discount": -1}), "invalid discount (negative)"),
+        (json!({"code": 1}), "invalid code (integer)"),
+        (json!({"code": -1}), "invalid code (negative)"),
+    ];
+
+    // Act 
+    for (invalid_body, error_message) in test_cases {
+        let response = app.patch_coupon(invalid_body).await;
+
+        // Assert
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            "The API did not fail with 400 Bad Request when the payload was `{}`.",
+            error_message
+        );
+    }
+}
+
+
 
 
 /**
@@ -335,67 +430,6 @@ async fn delete_by_code_returns_400_for_invalid_data() {
     }
 }
 
-#[tokio::test]
-async fn patch_returns_404_for_coupon_not_found(){
-    // Arrange
-    let app = spawn_app().await;
-    let coupon = get_default_coupon_data(get_random_coupon_code());
-    let body = json!(serde_json::to_value(&coupon).unwrap());
-
-    // Act 
-    let response = app.patch_coupon(body).await;
-
-    // Assert
-    assert_eq!(
-        404,
-        response.status().as_u16(),
-        "patch` did not fail with 404 Not Found."
-    );
-}
-
-#[tokio::test]
-async fn patch_returns_400_for_invalid_data() {
-    // Arrange
-    let app = spawn_app().await;
-
-    let test_cases = vec![
-        (json!({
-            "id": "string",
-            "code": "test",
-            "discount": 1,
-        }), "invalid id (string)"),
-        (json!({
-            "id": -1,
-            "code": "test",
-            "discount": 1,
-        }), "invalid id (negative)"),
-        (json!({
-            "code": "test",
-            "discount": 1,
-        }), "missing id"),
-        (json!({"discount": 1}), "missing code"),
-        (json!({"code": 1}), "missing discount"),
-        (json!({"discount": "a"}), "invalid discount (string)"),
-        (json!({"discount": -1}), "invalid discount (negative)"),
-        (json!({"code": 1}), "invalid code (integer)"),
-        (json!({"code": -1}), "invalid code (negative)"),
-    ];
-
-    // Act 
-    for (invalid_body, error_message) in test_cases {
-        let response = app.patch_coupon(invalid_body).await;
-
-        // Assert
-        assert_eq!(
-            400,
-            response.status().as_u16(),
-            "The API did not fail with 400 Bad Request when the payload was `{}`.",
-            error_message
-        );
-    }
-}
-
-
 /**
  * Verify Coupon
  */
@@ -483,7 +517,7 @@ fn get_default_coupon_data(code: String) -> CouponUpdate {
         code,
         discount: 10,
         max_usage_count: Some(2),
-        expiration_date: Some(NaiveDateTime::parse_from_str("2030-12-31 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
+        expiration_date: Some(NaiveDateTime::parse_from_str("2100-12-31 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
         active: true,
     };
 }

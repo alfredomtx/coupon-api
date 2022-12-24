@@ -30,14 +30,12 @@ pub async fn update(coupon: CouponUpdate, pool: &MySqlPool) -> Result<(), sqlx::
     query!(
         r#"
             UPDATE coupon SET
-            code = ?,
             discount = ?,
             active = ?,
             max_usage_count = ?,
             expiration_date = ?
             WHERE id = ?
         "#,
-        coupon.code,
         coupon.discount,
         coupon.active,
         coupon.max_usage_count,

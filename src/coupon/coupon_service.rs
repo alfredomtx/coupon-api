@@ -100,6 +100,7 @@ pub async fn is_valid(params: CouponQueryRequest, pool: &MySqlPool) -> Result<bo
     return Ok(true);
 }
 
+// TODO: validate discount higher than 90
 pub async fn insert(coupon: Json<CouponRequest>, pool: &MySqlPool) -> Result<CouponResponse, anyhow::Error> {
     let coupon_insert = CouponInsert {
         code: coupon.code.to_string(),
@@ -123,6 +124,7 @@ pub async fn insert(coupon: Json<CouponRequest>, pool: &MySqlPool) -> Result<Cou
     return Ok(coupon_response);
 }
 
+// TODO: validate discount higher than 90
 pub async fn update(coupon: Json<CouponUpdate>, pool: &MySqlPool) -> Result<(), CouponError> {
     let coupon = coupon.0;
     // check if the coupon exists
