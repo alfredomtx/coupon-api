@@ -65,8 +65,9 @@ async fn authorization_test_request(expected_status: u16, client: &reqwest::Clie
         _ => panic!("{}", format!("Invalid method: {}", method)),
     }
     assert_eq!(
+        response.status().as_u16(),
         expected_status,
-        response.status().as_u16(),"[Test `{}`]: The `{}` request to endpoint `{}` did not fail with `{}`.",
+        "[Test `{}`]: The `{}` request to endpoint `{}` did not fail with `{}`.",
         test_identifier, method, endpoint, expected_status,
     );
 

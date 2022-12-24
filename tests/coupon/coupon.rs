@@ -17,11 +17,10 @@ async fn get_coupon_by_id_returns_a_coupon() {
     
     // Act
     // add the coupon before getting it
-    let response = app.post_coupon(body, true).await;
-    let coupon_response = get_coupon_from_response(response).await;
+    let added_coupon = app.post_and_deserialize_coupon(body).await; 
 
     // request for the added coupon using its id
-    let coupon = app.get_and_deserialize_coupon(coupon_response.id).await;
+    let coupon = app.get_and_deserialize_coupon("id", added_coupon.id.to_string()).await;
 
     // Assert
     assert_coupon_fields(coupon, coupon_request);
@@ -37,14 +36,15 @@ async fn get_coupon_by_code_returns_a_coupon() {
     
     // Act
     // add the coupon before getting it
-    app.post_coupon(body, true).await;
+    let added_coupon = app.post_and_deserialize_coupon(body).await; 
 
-    let response = app.get_coupon("", Some(vec![("code", code)]) ).await;
-    let coupon = get_coupon_from_response(response).await;
+    // request for the added coupon using its code
+    let coupon = app.get_and_deserialize_coupon("code", added_coupon.code).await;
 
     // Assert
      assert_coupon_fields(coupon, coupon_request);
 }
+
 
 #[tokio::test]
 async fn get_all_coupons_returns_a_list_of_coupons() {
@@ -150,7 +150,6 @@ async fn post_returns_409_conflit_if_coupon_already_exists() {
 }
 
 #[tokio::test]
-// TODO: validate discount higher than 90
 async fn post_returns_400_for_invalid_data() {
     // Arrange
     let app = spawn_app().await;
@@ -160,6 +159,7 @@ async fn post_returns_400_for_invalid_data() {
         (json!({"code": 1}), "missing discount"),
         (json!({"discount": "a"}), "invalid discount (string)"),
         (json!({"discount": -1}), "invalid discount (negative)"),
+        (json!({"discount": 90}), "invalid discount (higher than 90)"),
         (json!({"code": 1}), "invalid code (integer)"),
         (json!({"code": -1}), "invalid code (negative)"),
     ];
@@ -184,41 +184,15 @@ async fn post_returns_400_for_invalid_data() {
  */
 #[tokio::test]
 async fn patch_by_id_updates_the_coupon_successfully() {
-    // Arrange
-    let app = spawn_app().await;
-    let coupon_request = get_coupon_request(get_random_coupon_code());
-    let body = get_coupon_request_json(&coupon_request);
-    
-    // Act
-    // add a coupon
-    let added_coupon = app.post_and_deserialize_coupon(body).await; 
-
-    // update the added coupon with new data
-    let mut coupon_update = get_default_coupon_data(added_coupon.code);
-    coupon_update.id = added_coupon.id;
-    coupon_update.discount = 66;
-    coupon_update.max_usage_count = Some(123);
-    coupon_update.expiration_date = Some(NaiveDateTime::parse_from_str("2100-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap());
-    coupon_update.active = false;
-
-    let body = json!(serde_json::to_value(&coupon_update).unwrap());
-    
-    let response = app.patch_coupon(body, Some(vec![("id", added_coupon.id.to_string())]) ).await;
-    let response_status = response.status().as_u16();
-        
-    // Assert
-    assert_eq!(200, response_status);
-
-    let coupon = app.get_and_deserialize_coupon(added_coupon.id).await;
-
-    assert_coupon_fields(coupon.clone(), coupon_update.into());
-    // `date_updated` field now should have value
-    let _ = coupon.date_updated.unwrap();
+    patch_code_test_request("id").await;
 }
 
 #[tokio::test]
-// TODO: refactor, it is a duplication "by id" test
 async fn patch_by_code_updates_the_coupon_successfully() {
+    patch_code_test_request("code").await;
+}
+
+async fn patch_code_test_request(query_param: &str) {
     // Arrange
     let app = spawn_app().await;
     let coupon_request = get_coupon_request(get_random_coupon_code());
@@ -237,14 +211,18 @@ async fn patch_by_code_updates_the_coupon_successfully() {
     coupon_update.active = false;
 
     let body = json!(serde_json::to_value(&coupon_update).unwrap());
-    
-    let response = app.patch_coupon(body, Some(vec![("code", added_coupon.code)]) ).await;
+    let response;
+    if (query_param == "code"){
+        response = app.patch_coupon(body, Some(vec![("code", added_coupon.code)]) ).await;
+    } else {
+        response = app.patch_coupon(body, Some(vec![("id", added_coupon.id.to_string())]) ).await;
+    }
     let response_status = response.status().as_u16();
         
     // Assert
     assert_eq!(200, response_status);
 
-    let coupon = app.get_and_deserialize_coupon(added_coupon.id).await;
+    let coupon = app.get_and_deserialize_coupon("id", added_coupon.id.to_string()).await;
 
     assert_coupon_fields(coupon.clone(), coupon_update.into());
     // `date_updated` field now should have value
@@ -274,7 +252,7 @@ async fn patch_do_not_update_the_code() {
     // Assert
     assert_eq!(200, response_status);
 
-    let coupon = app.get_and_deserialize_coupon(added_coupon.id).await;
+    let coupon = app.get_and_deserialize_coupon("id", added_coupon.id.to_string()).await;
 
     // the code of the added coupon should not be updated
     assert_ne!(coupon.code, coupon_update.code);
@@ -299,7 +277,6 @@ async fn patch_returns_404_for_coupon_not_found(){
 }
 
 #[tokio::test]
-// TODO: validate discount higher than 90
 async fn patch_returns_422_for_invalid_body_data() {
     // Arrange
     let app = spawn_app().await;
@@ -316,6 +293,7 @@ async fn patch_returns_422_for_invalid_body_data() {
         (json!({"discount": 1,}), "missing id"),
         (json!({"discount": "a"}), "invalid discount (string)"),
         (json!({"discount": -1}), "invalid discount (negative)"),
+        (json!({"discount": 90}), "invalid discount (higher than 90)"),
     ];
 
     // Act 
@@ -324,8 +302,8 @@ async fn patch_returns_422_for_invalid_body_data() {
 
         // Assert
         assert_eq!(
-            400,
             response.status().as_u16(),
+            400,
             "The API did not fail with 400 Bad Request when the payload was `{}`.",
             error_message
         );
@@ -585,11 +563,6 @@ fn get_random_coupon_code() -> String {
     return Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
 }
 
-async fn get_coupon_from_response(response: reqwest::Response) -> CouponResponse {
-    let response_body = response.text().await.expect("failed to get response_body");
-    let coupon_response: CouponResponse = serde_json::from_str(&response_body).expect("Failed to parse CouponResponse from response.");
-    return coupon_response;
-}
 
 // #[tokio::test]
 // async fn coupon_fails_if_there_is_a_fatal_database_error() {

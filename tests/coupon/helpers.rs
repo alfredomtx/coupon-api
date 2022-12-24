@@ -30,8 +30,13 @@ impl TestApp {
         return coupon;
     }
 
-    pub async fn get_and_deserialize_coupon(&self, id: i32) -> CouponResponse {
-        let response = self.get_coupon("", Some(vec![("id", id.to_string())]) ).await;
+    pub async fn get_and_deserialize_coupon(&self, query_param: &str, value: String) -> CouponResponse {
+        let response;
+        if (query_param == "code"){
+            response = self.get_coupon("", Some(vec![("code", value)]) ).await;
+        } else {
+            response = self.get_coupon("", Some(vec![("id", value)]) ).await;
+        }
         let response_body = response.text().await.expect("failed to get response_body");
         let coupon: CouponResponse = serde_json::from_str(&response_body).expect("Failed to parse CouponResponse from response.");
         return coupon;
