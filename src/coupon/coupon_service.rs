@@ -2,7 +2,6 @@ use super::model::{CouponRequest, CouponResponse, CouponError, CouponInsert, Cou
 use super::{coupon_repository, CouponQueryRequest};
 use chrono::{Utc, Datelike};
 use sqlx::{MySqlPool};
-use actix_web::web::Json;
 use anyhow::{Context, Result, anyhow};
 use std::convert::TryFrom;
 
@@ -63,6 +62,73 @@ pub async fn get_by_id_or_code(params: CouponQueryRequest, pool: &MySqlPool) -> 
     return Err(CouponError::ValidationError("Both `id` and `code` params are missing from URL query, one is required.".to_string()));
 }
 
+// TODO: validate discount higher than 90
+pub async fn insert(coupon: CouponRequest, pool: &MySqlPool) -> Result<CouponResponse, anyhow::Error> {
+    let coupon_insert = CouponInsert {
+        code: coupon.code.to_string(),
+        discount: coupon.discount,
+        active: coupon.active,
+        max_usage_count: coupon.max_usage_count,
+        expiration_date: coupon.expiration_date,
+    };
+
+    let inserted_id = coupon_repository::insert(coupon_insert, pool).await
+    .map_err(|e| CouponError::InternalError(anyhow!(format!("Something went wrong and the coupon was not inserted: {}", e))))?;
+
+    let inserted_id = i32::try_from(inserted_id).or_else(|e| Err(CouponError::InternalError(anyhow!(format!("Failed to read inserted_id: {}", e)))))?;
+
+    let inserted_coupon = coupon_repository::get_by_id(inserted_id, pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?;
+
+    let coupon = inserted_coupon.ok_or(CouponError::NotFoundError(anyhow!(format!("Inserted coupon with id `{}` not found.", inserted_id))))?;
+
+    let coupon_response = coupon.try_into().map_err(|e| CouponError::InternalError(anyhow!(format!("Failed to parse CouponResponse: {}.", e))))?;
+    return Ok(coupon_response);
+}
+
+// TODO: validate discount higher than 90
+pub async fn update(params: CouponQueryRequest, coupon_data: CouponUpdate, pool: &MySqlPool) -> Result<(), CouponError> {
+    let coupon = get_by_id_or_code(params, pool).await?;
+
+    let coupon_update = CouponUpdate {
+        discount: coupon_data.discount,
+        active: coupon_data.active,
+        max_usage_count: coupon_data.max_usage_count,
+        expiration_date: coupon_data.expiration_date,
+    };
+
+    coupon_repository::update(coupon.id, coupon_update, &pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?;
+
+    return Ok(());
+}
+
+pub async fn delete_by_id(id: i32, pool: &MySqlPool) -> Result<(), CouponError> {
+    coupon_repository::get_by_id(id, pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?
+        .ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with id `{}` not found.", id))))?;
+
+    coupon_repository::delete_by_id(id, pool).await
+        .context("Failed to delete by id")?;
+
+    coupon_repository::delete_by_id(id, &pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?;
+    return Ok(());
+}
+
+pub async fn delete_by_code(code: String, pool: &MySqlPool) -> Result<(), CouponError> {
+    coupon_repository::get_by_code(&code, pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?
+        .ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with code `{}` not found.", &code))))?;
+
+    coupon_repository::delete_by_code(&code, pool).await
+        .context("Failed to delete by code")?;
+            
+    coupon_repository::delete_by_code(&code, &pool).await
+        .map_err(|error| CouponError::UnexpectedError(error.into()))?;
+    return Ok(());
+}
+
 /// Verify if the coupon is valid for use, return a boolean.
 pub async fn is_valid(params: CouponQueryRequest, pool: &MySqlPool) -> Result<bool, CouponError> {
     let coupon = get_by_id_or_code(params, pool).await?;
@@ -98,77 +164,4 @@ pub async fn is_valid(params: CouponQueryRequest, pool: &MySqlPool) -> Result<bo
     }
 
     return Ok(true);
-}
-
-// TODO: validate discount higher than 90
-pub async fn insert(coupon: Json<CouponRequest>, pool: &MySqlPool) -> Result<CouponResponse, anyhow::Error> {
-    let coupon_insert = CouponInsert {
-        code: coupon.code.to_string(),
-        discount: coupon.discount,
-        active: coupon.active,
-        max_usage_count: coupon.max_usage_count,
-        expiration_date: coupon.expiration_date,
-    };
-
-    let inserted_id = coupon_repository::insert(coupon_insert, pool).await
-    .map_err(|e| CouponError::InternalError(anyhow!(format!("Something went wrong and the coupon was not inserted: {}", e))))?;
-
-    let inserted_id = i32::try_from(inserted_id).or_else(|e| Err(CouponError::InternalError(anyhow!(format!("Failed to read inserted_id: {}", e)))))?;
-
-    let inserted_coupon = coupon_repository::get_by_id(inserted_id, pool).await
-        .map_err(|error| CouponError::UnexpectedError(error.into()))?;
-
-    let coupon = inserted_coupon.ok_or(CouponError::NotFoundError(anyhow!(format!("Inserted coupon with id `{}` not found.", inserted_id))))?;
-
-    let coupon_response = coupon.try_into().map_err(|e| CouponError::InternalError(anyhow!(format!("Failed to parse CouponResponse: {}.", e))))?;
-    return Ok(coupon_response);
-}
-
-// TODO: validate discount higher than 90
-pub async fn update(coupon: Json<CouponUpdate>, pool: &MySqlPool) -> Result<(), CouponError> {
-    let coupon = coupon.0;
-    // check if the coupon exists
-    coupon_repository::get_by_id(coupon.id, pool).await
-        .map_err(|error| CouponError::UnexpectedError(error.into()))?
-        .ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with id `{}` not found.", coupon.id))))?;
-
-    let coupon_update = CouponUpdate {
-        id: coupon.id,
-        code: coupon.code,
-        discount: coupon.discount,
-        active: coupon.active,
-        max_usage_count: coupon.max_usage_count,
-        expiration_date: coupon.expiration_date,
-    };
-
-    coupon_repository::update(coupon_update, &pool).await
-        .map_err(|error| CouponError::UnexpectedError(error.into()))?;
-
-    return Ok(());
-}
-
-pub async fn delete_by_id(id: i32, pool: &MySqlPool) -> Result<(), CouponError> {
-    coupon_repository::get_by_id(id, pool).await
-        .map_err(|error| CouponError::UnexpectedError(error.into()))?
-        .ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with id `{}` not found.", id))))?;
-
-    coupon_repository::delete_by_id(id, pool).await
-        .context("Failed to delete by id")?;
-
-    coupon_repository::delete_by_id(id, &pool).await
-        .map_err(|error| CouponError::UnexpectedError(error.into()))?;
-    return Ok(());
-}
-
-pub async fn delete_by_code(code: String, pool: &MySqlPool) -> Result<(), CouponError> {
-    coupon_repository::get_by_code(&code, pool).await
-        .map_err(|error| CouponError::UnexpectedError(error.into()))?
-        .ok_or(CouponError::NotFoundError(anyhow!(format!("Coupon with code `{}` not found.", &code))))?;
-
-    coupon_repository::delete_by_code(&code, pool).await
-        .context("Failed to delete by code")?;
-            
-    coupon_repository::delete_by_code(&code, &pool).await
-        .map_err(|error| CouponError::UnexpectedError(error.into()))?;
-    return Ok(());
 }

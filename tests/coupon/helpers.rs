@@ -48,8 +48,6 @@ impl TestApp {
                 .send()
                 .await
                 .expect("Failed to perform GET request");
-                // .error_for_status()
-                // .unwrap();
         }
         return self.api_client
             .get(&format!("{}/coupon{}", &self.address, endpoint))
@@ -58,8 +56,22 @@ impl TestApp {
             .expect("Failed to perform GET request");
     }
         
-    pub async fn patch_coupon(&self, body: serde_json::Value) -> reqwest::Response {
-        return self.request_coupon(Method::PATCH, "", body, false).await;
+    pub async fn patch_coupon(&self, body: serde_json::Value, query: Option<Vec<(&str, String)>>) -> reqwest::Response {
+        if let Some(params) = query {
+            return self.api_client
+                .patch(&format!("{}/coupon", &self.address))
+                .json(&body)
+                .query(&params)
+                .send()
+                .await
+                .expect("Failed to perform GET request");
+        }
+        return self.api_client
+            .patch(&format!("{}/coupon", &self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to perform GET request");
     }
 
     pub async fn delete_coupon(&self, endpoint: &str, body: serde_json::Value) -> reqwest::Response {

@@ -26,7 +26,7 @@ pub async fn insert(coupon: CouponInsert, pool: &MySqlPool) -> Result<u64, sqlx:
     return Ok(result.last_insert_id());
 }
 
-pub async fn update(coupon: CouponUpdate, pool: &MySqlPool) -> Result<(), sqlx::Error> {
+pub async fn update(id: i32, coupon: CouponUpdate, pool: &MySqlPool) -> Result<(), sqlx::Error> {
     query!(
         r#"
             UPDATE coupon SET
@@ -40,7 +40,7 @@ pub async fn update(coupon: CouponUpdate, pool: &MySqlPool) -> Result<(), sqlx::
         coupon.active,
         coupon.max_usage_count,
         coupon.expiration_date,
-        coupon.id
+        id
     )
     .execute(pool)
     .await

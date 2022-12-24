@@ -36,7 +36,7 @@ pub async fn get_coupon(params: web::Query<CouponQueryRequest>, pool: Data::<MyS
 )]
 #[post("/coupon")]
 pub async fn add_coupon(request: web::Json<CouponRequest>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
-    let coupon = coupon_service::insert(request, &pool).await?;
+    let coupon = coupon_service::insert(request.0, &pool).await?;
     return Ok(HttpResponse::Created().json(coupon));
 }
 
@@ -44,8 +44,8 @@ pub async fn add_coupon(request: web::Json<CouponRequest>, pool: Data::<MySqlPoo
     name = "Update coupon", skip(pool)
 )]
 #[patch("/coupon")]
-pub async fn update_coupon(request: web::Json<CouponUpdate>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
-    coupon_service::update(request, &pool).await?;
+pub async fn update_coupon(params: web::Query<CouponQueryRequest>, request: web::Json<CouponUpdate>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
+    coupon_service::update(params.into_inner(), request.0, &pool).await?;
     return Ok(HttpResponse::Ok().finish());
 }
 

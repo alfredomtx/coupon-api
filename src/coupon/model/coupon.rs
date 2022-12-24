@@ -55,8 +55,6 @@ pub struct CouponResponse {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CouponUpdate {
-    pub id: i32,
-    pub code: String,
     pub discount: i32,
     pub active: bool,
     pub max_usage_count: Option<i32>,
@@ -94,24 +92,10 @@ impl TryFrom<Coupon> for CouponResponse {
     }
 }
 
-impl TryFrom<CouponUpdate> for CouponResponse {
-    type Error = String;
-    fn try_from(coupon: CouponUpdate) -> Result<Self, Self::Error> {
-        return Ok( Self {
-            id: coupon.id,
-            code: coupon.code,
-            discount: coupon.discount,
-            active: coupon.active,
-            max_usage_count: coupon.max_usage_count,
-            expiration_date: coupon.expiration_date,
-            date_created: None,
-            date_updated: None,
-        });
-    }
-}
 
-impl From<CouponUpdate> for CouponRequest {
-    fn from(coupon: CouponUpdate) -> Self {
+
+impl From<Coupon> for CouponRequest {
+    fn from(coupon: Coupon) -> Self {
         return Self {
             code: coupon.code,
             discount: coupon.discount,
