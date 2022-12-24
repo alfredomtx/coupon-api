@@ -1,3 +1,4 @@
+use super::CouponDiscount;
 use actix_web::{ 
     ResponseError,
     http::{StatusCode},
@@ -5,7 +6,9 @@ use actix_web::{
 use serde::{Serialize, Deserialize};
 // use chrono::NaiveDateTime;
 use sqlx::types::chrono::{NaiveDateTime};
-#[derive(Serialize, Debug, Deserialize)]
+
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Coupon {
     pub id: i32,
     pub code: String,
@@ -20,21 +23,31 @@ pub struct Coupon {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CouponInsert {
     pub code: String,
+    pub discount: CouponDiscount,
+    pub active: bool,
+    pub max_usage_count: Option<i32>,
+    pub expiration_date: Option<NaiveDateTime>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CouponInsertRequest {
+    pub code: String,
     pub discount: i32,
     pub active: bool,
     pub max_usage_count: Option<i32>,
     pub expiration_date: Option<NaiveDateTime>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct CouponQueryRequest {
-    pub id: Option<String>,
-    pub code: Option<String>,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CouponUpdate {
+    pub discount: CouponDiscount,
+    pub active: bool,
+    pub max_usage_count: Option<i32>,
+    pub expiration_date: Option<NaiveDateTime>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct CouponRequest {
-    pub code: String,
+pub struct CouponUpdateRequest {
     pub discount: i32,
     pub active: bool,
     pub max_usage_count: Option<i32>,
@@ -53,28 +66,10 @@ pub struct CouponResponse {
     pub date_updated: Option<NaiveDateTime>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CouponUpdate {
-    pub discount: i32,
-    pub active: bool,
-    pub max_usage_count: Option<i32>,
-    pub expiration_date: Option<NaiveDateTime>,
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum CouponError {
-    #[error("{0}")]
-    AlreadyExistsError(#[source] anyhow::Error),
-    #[error("{0}")]
-    InternalError(#[source] anyhow::Error),
-    // NotFoundError has one String parameter
-    #[error("{0}")]
-    NotFoundError(#[source] anyhow::Error),
-    // ValidationError has one String parameter
-    #[error("{0}")]
-    ValidationError(String),
-    #[error(transparent)]
-    UnexpectedError(#[from] anyhow::Error),
+#[derive(Debug, Deserialize)]
+pub struct CouponQueryRequest {
+    pub id: Option<String>,
+    pub code: Option<String>,
 }
 
 // Convert a Coupon to a CouponResponse
@@ -94,9 +89,35 @@ impl TryFrom<Coupon> for CouponResponse {
     }
 }
 
+impl TryFrom<CouponUpdateRequest> for CouponUpdate {
+    type Error = String;
+    fn try_from(coupon: CouponUpdateRequest) -> Result<Self, Self::Error> {
+        let discount = CouponDiscount::parse(coupon.discount)?;
+        return Ok( Self {
+            discount,
+            active: coupon.active,
+            max_usage_count: coupon.max_usage_count,
+            expiration_date: coupon.expiration_date,
+        });
+    }
+}
+
+impl TryFrom<CouponInsertRequest> for CouponInsert {
+    type Error = String;
+    fn try_from(coupon: CouponInsertRequest) -> Result<Self, Self::Error> {
+        let discount = CouponDiscount::parse(coupon.discount)?;
+        return Ok( Self {
+            code: coupon.code,
+            discount,
+            active: coupon.active,
+            max_usage_count: coupon.max_usage_count,
+            expiration_date: coupon.expiration_date,
+        });
+    }
+}
 
 
-impl From<Coupon> for CouponRequest {
+impl From<Coupon> for CouponInsertRequest {
     fn from(coupon: Coupon) -> Self {
         return Self {
             code: coupon.code,
@@ -106,6 +127,22 @@ impl From<Coupon> for CouponRequest {
             expiration_date: coupon.expiration_date,
         };
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum CouponError {
+    #[error("{0}")]
+    AlreadyExistsError(#[source] anyhow::Error),
+    #[error("{0}")]
+    InternalError(#[source] anyhow::Error),
+    // NotFoundError has one String parameter
+    #[error("{0}")]
+    NotFoundError(#[source] anyhow::Error),
+    // ValidationError has one String parameter
+    #[error("{0}")]
+    ValidationError(String),
+    #[error(transparent)]
+    UnexpectedError(#[from] anyhow::Error),
 }
 
 impl ResponseError for CouponError {

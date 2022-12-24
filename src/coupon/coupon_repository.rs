@@ -12,7 +12,7 @@ pub async fn insert(coupon: CouponInsert, pool: &MySqlPool) -> Result<u64, sqlx:
             (?, ?, ?, ?, ?)
         "#,
         coupon.code,
-        coupon.discount,
+        coupon.discount.as_ref(),
         coupon.active,
         coupon.max_usage_count,
         coupon.expiration_date,
@@ -36,7 +36,7 @@ pub async fn update(id: i32, coupon: CouponUpdate, pool: &MySqlPool) -> Result<(
             expiration_date = ?
             WHERE id = ?
         "#,
-        coupon.discount,
+        coupon.discount.as_ref(),
         coupon.active,
         coupon.max_usage_count,
         coupon.expiration_date,

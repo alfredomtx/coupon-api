@@ -1,0 +1,5 @@
+A list of few stuff to do in the near future:
+- Check pending `TODO` comments in the code.
+- Assert error messages on fail scenario tests.
+- Add cache on GET coupon requests(except for `verify`) with Redis.
+

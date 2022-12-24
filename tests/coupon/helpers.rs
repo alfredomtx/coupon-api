@@ -21,24 +21,31 @@ pub struct TestApp {
     pub api_key: String,
 }
 
-// TODO: helper function to build query params.
+pub fn build_query_params(key: &str, value: String) -> Option<Vec<(&str, String)>> {
+    return Some(vec![(key, value)]);
+}
+
 impl TestApp {
     pub async fn post_and_deserialize_coupon(&self, body: serde_json::Value) -> CouponResponse {
         let response = self.post_coupon(body, false).await;
+        let status = response.status().as_u16();
         let response_body = response.text().await.expect("Failed to get response_body");
-        let coupon: CouponResponse = serde_json::from_str(&response_body).expect("Failed to parse CouponResponse from response.");
+        if (!status.to_string().starts_with("2")){
+            dbg!(&response_body);
+        }
+        let coupon: CouponResponse = serde_json::from_str(&response_body).expect("POST: Failed to parse CouponResponse from response.");
         return coupon;
     }
 
     pub async fn get_and_deserialize_coupon(&self, query_param: &str, value: String) -> CouponResponse {
         let response;
         if (query_param == "code"){
-            response = self.get_coupon("", Some(vec![("code", value)]) ).await;
+            response = self.get_coupon("", build_query_params("code", value)).await;
         } else {
-            response = self.get_coupon("", Some(vec![("id", value)]) ).await;
+            response = self.get_coupon("", build_query_params("id", value)).await;
         }
         let response_body = response.text().await.expect("failed to get response_body");
-        let coupon: CouponResponse = serde_json::from_str(&response_body).expect("Failed to parse CouponResponse from response.");
+        let coupon: CouponResponse = serde_json::from_str(&response_body).expect("GET: Failed to parse CouponResponse from response.");
         return coupon;
     }
 
@@ -85,16 +92,16 @@ impl TestApp {
     }
 
     pub async fn request_coupon(&self, method: Method, endpoint: &str, body: serde_json::Value, error_for_status: bool) -> reqwest::Response {
-        if (error_for_status == true){
-            return self.api_client
-            .request(method.clone(), &format!("{}/coupon{}", &self.address, endpoint))
-            .json(&body)
-            .send()
-            .await
-            .expect(format!("Failed to perform {} request", method.to_string()).as_str())
-            .error_for_status()
-            .unwrap();
-        }
+        // if (error_for_status == true){
+        //     return self.api_client
+        //     .request(method.clone(), &format!("{}/coupon{}", &self.address, endpoint))
+        //     .json(&body)
+        //     .send()
+        //     .await
+        //     .expect(format!("Failed to perform {} request", method.to_string()).as_str())
+        //     .error_for_status()
+        //     .unwrap();
+        // }
         return self.api_client
             .request(method.clone(), &format!("{}/coupon{}", &self.address, endpoint))
             .json(&body)
@@ -185,6 +192,8 @@ async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
 
     return connection_pool;
 }
+
+
 
 
 // Ensure that the `tracing` stack is only initialised once using `once_cell`
