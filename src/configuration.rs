@@ -75,6 +75,11 @@ pub fn get_configuration() -> Result<Settings, ConfigError> {
 
     let mut builder = Config::builder();
 
+    // If in Production, get the `port` variable from Heroku and set in our expected env format
+    if let (Environment::Production) = environment {
+        set_port_heroku();
+    }
+
     // must re-assign to retain ownership
     builder = builder.add_source(config::File::from(configuration_directory.join("base.yaml")))
         // Add in settings from environment variables (with a prefix of APP and '__' as separator)
@@ -82,12 +87,12 @@ pub fn get_configuration() -> Result<Settings, ConfigError> {
         .add_source(config::Environment::with_prefix("APP").prefix_separator("_").separator("__"));
 
     match environment {
-        Environment::Production => {
-            set_port_heroku();
+        Environment::Local => {
+            // add source from config file only in Local environment, in Production we will use Environment Variables.
+            builder = builder.add_source(config::File::from(configuration_directory.join(&environment_filename)));
         }
         _ => {
-            // add source from config file only in Local environment, in Production we will rely only on Environment Variables.
-            builder = builder.add_source(config::File::from(configuration_directory.join(&environment_filename)));
+         
         }
     }
 
