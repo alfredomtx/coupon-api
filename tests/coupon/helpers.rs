@@ -21,6 +21,7 @@ pub struct TestApp {
     pub api_key: String,
 }
 
+// TODO: helper function to build query params.
 impl TestApp {
     pub async fn post_and_deserialize_coupon(&self, body: serde_json::Value) -> CouponResponse {
         let response = self.post_coupon(body, false).await;

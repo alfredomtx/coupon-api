@@ -126,16 +126,6 @@
     },
     "query": "DELETE FROM coupon\n            WHERE code = ?\n        "
   },
-  "6d273d9ed504cee2156e7d64ab0556d84e1751265e19ad351f08fb278cc3b93e": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Right": 6
-      }
-    },
-    "query": "\n            UPDATE coupon SET\n            code = ?,\n            discount = ?,\n            active = ?,\n            max_usage_count = ?,\n            expiration_date = ?\n            WHERE id = ?\n        "
-  },
   "70ffc1639f9ca71ccaca0c9ccda61351560bbe5ed12f3a5de4c3dcec1d20e799": {
     "describe": {
       "columns": [
@@ -387,6 +377,16 @@
       }
     },
     "query": "\n            INSERT INTO coupon \n            (code, discount, active, max_usage_count, expiration_date) \n            VALUES \n            (?, ?, ?, ?, ?)\n        "
+  },
+  "9cf9002f3da14cf194675225b044ae1317ab005e69a1e4283e7ac724dc8fab67": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 5
+      }
+    },
+    "query": "\n            UPDATE coupon SET\n            discount = ?,\n            active = ?,\n            max_usage_count = ?,\n            expiration_date = ?\n            WHERE id = ?\n        "
   },
   "f23242c095d8dd1840483fa3f4181b4d138c3c8a9f3e6de9565e0e7110fb3369": {
     "describe": {

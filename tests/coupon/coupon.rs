@@ -127,7 +127,7 @@ async fn get_coupon_not_found_returns_404(){
  }
 
 #[tokio::test]
-async fn post_returns_500_if_coupon_already_exists() {
+async fn post_returns_409_conflit_if_coupon_already_exists() {
     // Arrange
     let app = spawn_app().await;
     let coupon_request = get_coupon_request(get_random_coupon_code());
@@ -146,7 +146,7 @@ async fn post_returns_500_if_coupon_already_exists() {
     let response_status = response.status().as_u16();
 
     // Assert 2
-    assert_eq!(500, response_status);
+    assert_eq!(409, response_status);
 }
 
 #[tokio::test]
@@ -300,7 +300,7 @@ async fn patch_returns_404_for_coupon_not_found(){
 
 #[tokio::test]
 // TODO: validate discount higher than 90
-async fn patch_returns_400_for_invalid_body_data() {
+async fn patch_returns_422_for_invalid_body_data() {
     // Arrange
     let app = spawn_app().await;
 
@@ -333,7 +333,7 @@ async fn patch_returns_400_for_invalid_body_data() {
 }
 
 #[tokio::test]
-async fn patch_returns_400_for_invalid_id_query_param_data() {
+async fn patch_returns_422_for_invalid_id_query_param_data() {
     // Arrange
     let app = spawn_app().await;
 
@@ -358,8 +358,8 @@ async fn patch_returns_400_for_invalid_id_query_param_data() {
 
         // Assert
         assert_eq!(
-            400,
             response.status().as_u16(),
+            422,
             "The API did not fail with 400 Bad Request when the payload was `{}`.",
             error_message
         );

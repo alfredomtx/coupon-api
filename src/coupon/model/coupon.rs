@@ -64,6 +64,8 @@ pub struct CouponUpdate {
 #[derive(thiserror::Error, Debug)]
 pub enum CouponError {
     #[error("{0}")]
+    AlreadyExistsError(#[source] anyhow::Error),
+    #[error("{0}")]
     InternalError(#[source] anyhow::Error),
     // NotFoundError has one String parameter
     #[error("{0}")]
@@ -109,9 +111,10 @@ impl From<Coupon> for CouponRequest {
 impl ResponseError for CouponError {
     fn status_code(&self) -> StatusCode {
         match self {
+            CouponError::AlreadyExistsError(_) => StatusCode::CONFLICT,
             CouponError::InternalError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             CouponError::NotFoundError(_) => StatusCode::NOT_FOUND,
-            CouponError::ValidationError(_) => StatusCode::BAD_REQUEST,
+            CouponError::ValidationError(_) => StatusCode::UNPROCESSABLE_ENTITY,
             CouponError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }

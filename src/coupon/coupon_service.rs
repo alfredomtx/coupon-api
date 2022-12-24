@@ -63,7 +63,12 @@ pub async fn get_by_id_or_code(params: CouponQueryRequest, pool: &MySqlPool) -> 
 }
 
 // TODO: validate discount higher than 90
-pub async fn insert(coupon: CouponRequest, pool: &MySqlPool) -> Result<CouponResponse, anyhow::Error> {
+pub async fn insert(coupon: CouponRequest, pool: &MySqlPool) -> Result<CouponResponse, CouponError> {
+    // if Coupon already exists, return it
+    if let Some(_) = get_by_code(coupon.code.clone(), pool).await.ok() {
+        return Err(CouponError::AlreadyExistsError(anyhow!(format!("Coupon with code `{}` already exists.", coupon.code))));
+    }
+    
     let coupon_insert = CouponInsert {
         code: coupon.code.to_string(),
         discount: coupon.discount,
