@@ -92,16 +92,16 @@ impl TestApp {
     }
 
     pub async fn request_coupon(&self, method: Method, endpoint: &str, body: serde_json::Value, error_for_status: bool) -> reqwest::Response {
-        // if (error_for_status == true){
-        //     return self.api_client
-        //     .request(method.clone(), &format!("{}/coupon{}", &self.address, endpoint))
-        //     .json(&body)
-        //     .send()
-        //     .await
-        //     .expect(format!("Failed to perform {} request", method.to_string()).as_str())
-        //     .error_for_status()
-        //     .unwrap();
-        // }
+        if (error_for_status == true){
+            return self.api_client
+            .request(method.clone(), &format!("{}/coupon{}", &self.address, endpoint))
+            .json(&body)
+            .send()
+            .await
+            .expect(format!("Failed to perform {} request", method.to_string()).as_str())
+            .error_for_status()
+            .unwrap();
+        }
         return self.api_client
             .request(method.clone(), &format!("{}/coupon{}", &self.address, endpoint))
             .json(&body)
