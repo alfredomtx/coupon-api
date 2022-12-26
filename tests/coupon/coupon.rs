@@ -137,33 +137,79 @@ async fn post_returns_409_conflit_if_coupon_already_exists() {
 }
 
 #[tokio::test]
-// TODO: add missing required fields for CouponInsertRequest
-async fn post_returns_400_for_invalid_coupon_data() {
+async fn post_returns_4xx_for_invalid_coupon_data() {
     // Arrange
     let app = spawn_app().await;
 
     let test_cases = vec![
-        (json!({"discount": 1}), "missing code"),
-        (json!({"code": 1}), "missing discount"),
-
-        (json!({"discount": "a", "code": "test"}), "invalid discount (string)"),
-        (json!({"discount": -1, "code": "test"}), "invalid discount (negative)"),
-        (json!({"discount": 91, "code": "test"}), "invalid discount (higher than 90)"),
-
-        (json!({"code": 1, "discount": 0}), "invalid code (integer)"),
-        (json!({"code": -1, "discount": 0}), "invalid code (negative)"),
+        (json!({
+            "discount": 1,
+            "active": true,
+        }), "missing `code`", 400),
+        (json!({
+            "code": "test",
+            "active": true,
+        }), "missing `discount`", 400),
+        (json!({
+            "code": "string",
+            "discount": 1,
+        }), "missing `active`", 400),
+        (json!({
+            "discount": "string",
+            "code": "test",
+            "active": true,
+        }), "invalid `discount` (string)", 400),
+        (json!({
+            "discount": -1,
+            "code": "test",
+            "active": true,
+        }), "invalid `discount` (negative)", 422),
+        (json!({
+            "discount": 91,
+            "code": "test",
+            "active": true,
+        }), "invalid `discount` (higher than 90)", 422),
+        (json!({
+            "discount": 1,
+            "code": -1,
+            "active": true,
+        }), "invalid `code` (negative)", 400),
+        (json!({
+            "discount": 0,
+            "code": "test",
+            "active": "string",
+        }), "invalid `active` (string)", 400),
+        (json!({
+            "discount": 0,
+            "code": "test",
+            "active": -1,
+        }), "invalid `active` (negative)", 400),
+        (json!({
+            "discount": 0,
+            "code": "test",
+            "active": 2,
+        }), "invalid `active` (2)", 400),
+        (json!({
+            "discount": 0,
+            "code": "test",
+            "active": "true",
+        }), "invalid `active` (`true` string)", 400),
+        (json!({
+            "discount": 0,
+            "code": "test",
+            "active": "false",
+        }), "invalid `active` (`false` string)", 400),
     ];
 
     // Act 
-    for (invalid_body, error_message) in test_cases {
+    for (invalid_body, error_message, expected_code) in test_cases {
         let response = app.post_coupon(invalid_body, false).await;
-
         // Assert
         assert_eq!(
-            400,
             response.status().as_u16(),
-            "The API did not fail with 400 Bad Request when the payload was `{}`.",
-            error_message
+            expected_code,
+            "The API did not fail with `{}` when the payload was `{}`.",
+            expected_code, error_message
         );
     }
 }
@@ -263,15 +309,15 @@ async fn patch_returns_4xx_for_invalid_body_data() {
         (json!({
             "discount": "string",
             "active": true,
-        }), "invalid discount (string)", 400),
+        }), "invalid `discount` (string)", 400),
         (json!({
             "discount": -1,
             "active": true,
-        }), "invalid discount (negative)", 422),
+        }), "invalid `discount` (negative)", 422),
         (json!({
             "discount": 91,
             "active": true,
-        }), "invalid discount (higher than 90)", 422),
+        }), "invalid `discount` (higher than 90)", 422),
         (json!({
             "discount": 0,
             "active": "string",
@@ -440,7 +486,7 @@ async fn delete_by_code_returns_400_for_invalid_data() {
 
     let test_cases = vec![
         (json!({"some random field": ""}), "missing code"),
-        (json!({"code": -1}), "invalid code (negative)"),
+        (json!({"code": -1}), "invalid `code` (negative)"),
     ];
 
     // Act 
