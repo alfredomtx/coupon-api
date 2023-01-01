@@ -167,7 +167,7 @@ async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
         .expect("Failed to connect to database.");
 
     if (!config.test_database_name.contains("TEST")){
-        panic!("`TEST` string not found in Test Database name, is it correct?");
+        panic!("`TEST` string not found in Test Database name, for safety it must contains `TEST`.");
     }
 
     connection

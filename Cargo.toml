@@ -20,7 +20,7 @@ rand = "0.8.5"
 # runtime
 actix-web = "4.1.0"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "native-tls"] }
 # error handling
 thiserror = "1.0.37"
 anyhow = "1.0.68"
@@ -44,6 +44,7 @@ uuid = { version = "1.1.2", features = ["v4"] }
 chrono = { version = "0.4.23", features = ["serde"] }
 # used in Tests
 claim = "0.5.0"
+base64 = "0.20.0"
 
 [dependencies.sqlx]
 version = "0.6.0"

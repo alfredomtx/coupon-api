@@ -33,7 +33,7 @@ pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<CouponResponse, Coup
     let result = coupon_repository::get_by_id(id, pool).await
         .map_err(|error| CouponError::UnexpectedError(error.into()))?;
 
-    let coupon = result.ok_or( CouponError::NotFoundError(anyhow!(format!("Coupon with id `{}` not found.", id))))?;
+    let coupon = result.ok_or( CouponError::NotFoundError(anyhow!(format!("Coupon with id `{id}` not found."))))?;
 
     let coupon_response = coupon.try_into()
         .map_err(|e| CouponError::InternalError(anyhow!(format!("Failed to parse CouponResponse: {}.", e))))?;
@@ -97,7 +97,6 @@ pub async fn update(params: CouponQueryRequest, coupon_request: CouponUpdateRequ
     let coupon = get_by_id_or_code(params, pool).await?;
 
     let coupon_update: CouponUpdate = coupon_request.try_into().map_err(|e: String| CouponError::ValidationError(e))?;
-    dbg!(&coupon_update);
 
     coupon_repository::update(coupon.id, coupon_update, &pool).await
         .map_err(|error| CouponError::UnexpectedError(error.into()))?;

@@ -296,7 +296,7 @@ async fn patch_returns_404_for_coupon_not_found(){
     assert_eq!(
         response.status().as_u16(),
         404,
-        "patch` did not fail with 404 Not Found."
+        "`patch` did not fail with 404 Not Found."
     );
 }
 
@@ -353,28 +353,6 @@ async fn patch_returns_4xx_for_invalid_body_data() {
     }
 }
 
-// #[tokio::test]
-// async fn patch_returns_400_for_body_missing_required_fields() {
-//     // Arrange
-//     let (app, added_coupon) = spawn_app_and_post_coupon().await;
-
-//     let test_cases = vec![
-//         (json!({"discount": 1,}), "missing `active`"),
-//         (json!({"active": true,}), "missing `discount`"),
-//     ];
-
-//     // Act 
-//     for (invalid_body, error_message) in test_cases {
-//         let response = app.patch_coupon(invalid_body, build_query_params("id", added_coupon.id.to_string()) ).await;
-//         // Assert
-//         assert_eq!(
-//             response.status().as_u16(),
-//             400,
-//             "The API did not fail with 400 when the payload was `{}`.",
-//             error_message
-//         );
-//     }
-// }
 
 #[tokio::test]
 async fn patch_returns_422_for_invalid_id_query_param_data() {
