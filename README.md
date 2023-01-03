@@ -7,6 +7,7 @@ The main technologies and features are:
 - [Tokio](https://tokio.rs/) as asynchronous runtime
 - [SQLx](https://github.com/launchbadge/sqlx) as "kind of" the ORM
 - [MySQL](https://www.mysql.com/) database
+- [Redis](https://redis.com/) for caching and storing sessions.
 - [Docker](https://www.docker.com/) container
 - Simple Bearer token authentication
 - Unit and integration test for all API endpoints
