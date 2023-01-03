@@ -7,6 +7,44 @@
 	},
 	"item": [
 		{
+			"name": "auth",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);\r",
+							"postman.setEnvironmentVariable(\"Authorization\", jsonData);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"api_key\": \"zxVANmOku7oe5zqh5072pK9IVTak9JSe\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/auth",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"auth"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "health_check",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
@@ -49,7 +87,7 @@
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "{{token}}",
+						"value": "{{Authorization}}",
 						"type": "text"
 					}
 				],
@@ -73,7 +111,7 @@
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "{{token}}",
+						"value": "{{Authorization}}",
 						"type": "text"
 					}
 				],
@@ -102,7 +140,7 @@
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "{{token}}",
+						"value": "{{Authorization}}",
 						"type": "text"
 					}
 				],
@@ -125,13 +163,43 @@
 			"response": []
 		},
 		{
+			"name": "coupon/verify?code",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{Authorization}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/coupon/verify?code=Test",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"coupon",
+						"verify"
+					],
+					"query": [
+						{
+							"key": "code",
+							"value": "Test"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "coupon/id",
 			"request": {
 				"method": "DELETE",
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "{{token}}",
+						"value": "{{Authorization}}",
 						"type": "text"
 					}
 				],
@@ -164,7 +232,7 @@
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "{{token}}",
+						"value": "{{Authorization}}",
 						"type": "text"
 					}
 				],
@@ -197,13 +265,13 @@
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "{{token}}",
+						"value": "{{Authorization}}",
 						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"code\": \"TestCoupon\",\r\n    \"discount\": 10,\r\n    \"max_usage_count\": 10,\r\n    \"active\": true,\r\n    \"expiration_date\": \"2030-12-31T00:00:00\"\r\n}",
+					"raw": "{\r\n    \"code\": \"Test\",\r\n    \"discount\": 10,\r\n    \"active\": true,\r\n    \"expiration_date\": \"2022-12-31T00:00:00\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -223,19 +291,19 @@
 			"response": []
 		},
 		{
-			"name": "coupon",
+			"name": "coupon?id",
 			"request": {
 				"method": "PATCH",
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "{{token}}",
+						"value": "{{Authorization}}",
 						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"id\": 1,\r\n    \"code\": \"NewCupomCodeTest\",\r\n    \"discount\": 30,\r\n    \"max_usage_count\": 1000,\r\n    \"expiration_date\": \"2030-12-31T00:00:00\"\r\n}",
+					"raw": "{\r\n    \"active\": true,\r\n    \"discount\": 50,\r\n    \"expiration_date\": \"2030-12-31T00:00:00\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -243,12 +311,56 @@
 					}
 				},
 				"url": {
-					"raw": "{{base_url}}/coupon",
+					"raw": "{{base_url}}/coupon?id=1",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
 						"coupon"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "coupon?code",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{Authorization}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"active\": true,\r\n    \"discount\": 20,\r\n    \"expiration_date\": \"2023-01-25T00:00:00\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/coupon?code=Test",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"coupon"
+					],
+					"query": [
+						{
+							"key": "code",
+							"value": "Test"
+						}
 					]
 				}
 			},
@@ -278,21 +390,11 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "localhost:8000",
-			"type": "string"
-		},
-		{
-			"key": "token",
-			"value": "Bearer test123",
+			"value": "localhost:8000ahttps://coupon-api-oldbot.herokuapp.com",
 			"type": "string"
 		},
 		{
 			"key": "test",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "test2",
 			"value": "",
 			"type": "string"
 		}
