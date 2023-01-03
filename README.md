@@ -22,4 +22,4 @@ Since it requires authentication, you won't be able to interact with it. I will 
 
 In this repository, you can also find the `Coupon API.postman_collection.json` file, which you can import on [Postman](https://www.postman.com/) to have a template for the API calls of all endpoints available.
 
-![image](https://user-images.githubusercontent.com/20379136/210445392-84c0332e-c094-4a28-89d2-9f9e1822e85e.png)
+![image](https://user-images.githubusercontent.com/20379136/210445498-da776304-5ea9-4a08-b6b8-31763de92fd0.png)
