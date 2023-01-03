@@ -2,9 +2,8 @@ application:
   port: 8000
   host: 127.0.0.1
   base_url: "http://127.0.0.1"
-  # API KEY to validate in every request, the `Authorization` header must be present and its value start with "Bearer"
-  # e.g: {"Authorization": "Bearer tokentest123"}
-  api_key: "Bearer test123"
+  # API KEY to validate in `/auth` request.
+  api_key: "test123"
   
 database:
   # name of the test database, this database will be droped and created when running the tests
@@ -13,5 +12,5 @@ database:
   port: 3306
   username: "test"
   password: "testuserfromrustlangthatimlearning"
-  database_name: "coupon"
+  database_name: "test"
   require_ssl: false

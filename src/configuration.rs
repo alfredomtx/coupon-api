@@ -74,32 +74,19 @@ pub fn get_configuration() -> Result<Settings, ConfigError> {
         .try_into()
         .expect("Failed to parse APP_ENVIRONMENT.");
 
-    // println!("{}", format!("App environment: {}", &environment.as_str()));
-    
     let environment_filename = format!("{}.yaml", environment.as_str());
 
-    let mut builder = Config::builder();
-
-
-    // must re-assign to retain ownership
-    // Add in settings from environment variables (with a prefix of APP and '__' as separator)
-    // E.g. `APP_APPLICATION__PORT=5001 would set `Settings.application.port`
-    builder = builder.add_source(config::Environment::with_prefix("APP").prefix_separator("_").separator("__"));
-
-    match environment {
-        Environment::Local => {
-            // add source from config file only in Local environment, in Production we will use Environment Variables.
-            builder = builder.add_source(config::File::from(configuration_directory.join(&environment_filename)));
-        }
-        _ => {
-         
-        }
-    }
-    
     // If in Production, get the `port` variable from Heroku and set in our expected env format
     if let (Environment::Production) = environment {
         set_port_heroku();
     }
+
+    let mut builder = Config::builder();
+    // must re-assign to retain ownership
+    // Add in settings from environment variables (with a prefix of APP and '__' as separator)
+    // E.g. `APP_APPLICATION__PORT=5001 would set `Settings.application.port`
+    builder = builder.add_source(config::Environment::with_prefix("APP").prefix_separator("_").separator("__"));
+    builder = builder.add_source(config::File::from(configuration_directory.join(&environment_filename)));
 
     let settings = builder.build()?;
 

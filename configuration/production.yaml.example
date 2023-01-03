@@ -1,14 +1,9 @@
+# In Production, we will use Environment variables for all the other settings instead of reading from the .yaml file.
+# see `configuration.rs::get_configuration()` for details.
+
 application:
   host: 0.0.0.0
-  api_key: "Bearer some-long-and-secure-key"
-  
+
 database:
-  # name of the test database, this database will be droped and created when running the tests
-  # for safety, the program will panic if the database name does not contain the "TEST" string.
-  test_database_name: "TEST_RUST"
-  host: "127.0.0.1"
-  port: 3306
-  username: "root"
-  password: "root"
-  database_name: "test"
   require_ssl: true
+
