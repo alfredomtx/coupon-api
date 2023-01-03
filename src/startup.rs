@@ -1,16 +1,18 @@
 use crate::{
     configuration::{DatabaseSettings, Settings},
-    authentication::validator,
+    authentication::{validator, authenticate},
     coupon::{
         health_check, get_coupon, get_all_coupons, add_coupon, update_coupon,
         delete_coupon_by_code, delete_coupon_by_id, verify_coupon
     },
 };
 use actix_web::{
+    web,
     App, HttpServer,
     dev::Server,
     web::{Data, scope},
 };
+use secrecy::ExposeSecret;
 use sqlx::{
     MySqlPool,
     mysql::MySqlPoolOptions,
@@ -18,13 +20,16 @@ use sqlx::{
 use tracing_actix_web::TracingLogger;
 use std::net::TcpListener;
 
-pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key: String) -> Result<Server, std::io::Error> {
+pub fn run(listener: TcpListener, db_pool: MySqlPool, configuration: Settings) -> Result<Server, std::io::Error> {
 
     let api_key_auth = actix_web_httpauth::middleware::HttpAuthentication::with_fn(validator);
     
     let db_pool = Data::new(db_pool);
-    let base_url = Data::new(ApplicationBaseUrl(base_url));
-    let api_key = Data::new(ApplicationApiKey(api_key));
+    let base_url = Data::new(ApplicationBaseUrl(configuration.application.base_url));
+    let api_key = Data::new(configuration.application.api_key);
+    let redis = redis::Client::open(configuration.redis_uri.expose_secret().to_string())
+        .map_err(|e| anyhow::anyhow!(format!("Failed initialize redis client: {}.", e)))
+        .unwrap();
 
     let server = HttpServer::new(move || {
         App::new()
@@ -34,11 +39,13 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
             .app_data(db_pool.clone())
             .app_data(base_url.clone())
             .app_data(api_key.clone())
+            .app_data(web::Data::new(redis.clone()))
 
             /*
                 all access routes (not authenticated)
             */ 
             .service(health_check)
+            .service(authenticate)
 
             /*
                 authenticated routes
@@ -48,7 +55,7 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, base_url: String, api_key:
             .service(
                 // we need this scope so we can exclude the login service
                 // from being wrapped by the jwt middleware
-                scope("")
+                scope("/coupon")
                     .service(get_all_coupons)
                     .service(get_coupon)
                     .service(add_coupon)
@@ -76,7 +83,6 @@ pub struct Application {
 // Retrieval from the context, in actix-web, is type-based: using
 // a raw `String` would expose us to conflicts.
 pub struct ApplicationBaseUrl(pub String);
-pub struct ApplicationApiKey(pub String);
 
 impl Application {
     pub async fn build(configuration: Settings, test_database: bool) -> Result<Self, std::io::Error> {
@@ -93,8 +99,7 @@ impl Application {
         let server = run(
             listener,
             connection_pool,
-            configuration.application.base_url,
-            configuration.application.api_key,
+            configuration,
         )?;
 
         // We "save" the bound port in one of `Application`'s fields

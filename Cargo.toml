@@ -45,6 +45,7 @@ chrono = { version = "0.4.23", features = ["serde"] }
 # used in Tests
 claim = "0.5.0"
 base64 = "0.20.0"
+redis = { version = "0.22.1", features = ["tokio-comp"] }
 
 [dependencies.sqlx]
 version = "0.6.0"

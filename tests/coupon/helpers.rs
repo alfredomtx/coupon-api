@@ -1,5 +1,5 @@
 use coupon_api::{
-    configuration::{get_configuration, DatabaseSettings, Settings},
+    configuration::{get_configuration, DatabaseSettings, Settings, ApiKey},
     telemetry::{get_subscriber, init_subscriber},
     startup::{get_connection_pool, Application},
     coupon::{CouponResponse},
@@ -8,6 +8,7 @@ use reqwest::{
     Method,
     header:: HeaderMap,
 };
+use secrecy::ExposeSecret;
 use std::panic;
 use sqlx::{MySqlPool, MySqlConnection, Connection, Executor};
 use once_cell::sync::Lazy;
@@ -18,7 +19,7 @@ pub struct TestApp {
     pub db_name: String,
     pub port: u16,
     pub api_client: reqwest::Client,
-    pub api_key: String,
+    pub api_key: ApiKey,
 }
 
 pub fn build_query_params(key: &str, value: String) -> Option<Vec<(&str, String)>> {
@@ -151,7 +152,7 @@ pub async fn spawn_app() -> TestApp {
 fn create_reqwest_client(configuration: &Settings) -> reqwest::Client {
     // setting default Authorization header
     let mut headers = HeaderMap::new();
-    headers.insert("Authorization", configuration.application.api_key.parse().unwrap());
+    headers.insert("Authorization", configuration.application.api_key.0.expose_secret().to_string().parse().unwrap());
 
     return reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())

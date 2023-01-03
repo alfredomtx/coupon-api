@@ -10,7 +10,12 @@ use serde::{Deserialize};
 pub struct Settings {
     pub database: DatabaseSettings,
     pub application: ApplicationSettings,
+    pub redis_uri: Secret<String>,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ApiKey(pub Secret<String>);
+
 
 /// The possible runtime environment for our application.
 #[derive(Debug, Clone, Deserialize)]
@@ -25,7 +30,7 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub host: String,
     pub base_url: String,
-    pub api_key: String
+    pub api_key: ApiKey,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -75,16 +80,11 @@ pub fn get_configuration() -> Result<Settings, ConfigError> {
 
     let mut builder = Config::builder();
 
-    // If in Production, get the `port` variable from Heroku and set in our expected env format
-    if let (Environment::Production) = environment {
-        set_port_heroku();
-    }
 
     // must re-assign to retain ownership
-    builder = builder.add_source(config::File::from(configuration_directory.join("base.yaml")))
-        // Add in settings from environment variables (with a prefix of APP and '__' as separator)
-        // E.g. `APP_APPLICATION__PORT=5001 would set `Settings.application.port`
-        .add_source(config::Environment::with_prefix("APP").prefix_separator("_").separator("__"));
+    // Add in settings from environment variables (with a prefix of APP and '__' as separator)
+    // E.g. `APP_APPLICATION__PORT=5001 would set `Settings.application.port`
+    builder = builder.add_source(config::Environment::with_prefix("APP").prefix_separator("_").separator("__"));
 
     match environment {
         Environment::Local => {
@@ -94,6 +94,11 @@ pub fn get_configuration() -> Result<Settings, ConfigError> {
         _ => {
          
         }
+    }
+    
+    // If in Production, get the `port` variable from Heroku and set in our expected env format
+    if let (Environment::Production) = environment {
+        set_port_heroku();
     }
 
     let settings = builder.build()?;
