@@ -183,7 +183,7 @@ async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
     drop_test_database(&mut connection, config.test_database_name.clone()).await;
 
     connection
-        .execute(format!(r#"CREATE DATABASE {};"#, config.test_database_name).as_str())
+        .execute(format!(r#"CREATE DATABASE IF NOT EXISTS {};"#, config.test_database_name).as_str())
         .await
         .expect("Failed to create test database.");
     
