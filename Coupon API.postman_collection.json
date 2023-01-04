@@ -81,7 +81,7 @@
 			"response": []
 		},
 		{
-			"name": "coupon/all",
+			"name": "coupon",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -92,20 +92,19 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/coupon/all",
+					"raw": "{{base_url}}/coupon",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
-						"coupon",
-						"all"
+						"coupon"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "coupon?id",
+			"name": "coupon/:id",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -116,14 +115,15 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/coupon?id=1",
+					"raw": "{{base_url}}/coupon/:id",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
-						"coupon"
+						"coupon",
+						":id"
 					],
-					"query": [
+					"variable": [
 						{
 							"key": "id",
 							"value": "1"
@@ -134,7 +134,7 @@
 			"response": []
 		},
 		{
-			"name": "coupon?code",
+			"name": "coupon/:code",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -145,114 +145,19 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/coupon?code=Test",
+					"raw": "{{base_url}}/coupon/:code",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
-						"coupon"
+						"coupon",
+						":code"
 					],
-					"query": [
+					"variable": [
 						{
 							"key": "code",
 							"value": "Test"
 						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "coupon/verify?code",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "{{Authorization}}",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{base_url}}/coupon/verify?code=Test",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"coupon",
-						"verify"
-					],
-					"query": [
-						{
-							"key": "code",
-							"value": "Test"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "coupon/id",
-			"request": {
-				"method": "DELETE",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "{{Authorization}}",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"id\": 1\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{base_url}}/coupon/id",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"coupon",
-						"id"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "coupon/code",
-			"request": {
-				"method": "DELETE",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "{{Authorization}}",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"code\": \"Test\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{base_url}}/coupon/code",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"coupon",
-						"code"
 					]
 				}
 			},
@@ -291,9 +196,69 @@
 			"response": []
 		},
 		{
-			"name": "coupon?id",
+			"name": "coupon/:id",
 			"request": {
-				"method": "PATCH",
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{Authorization}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/coupon/:id",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"coupon",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "coupon/:code",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{Authorization}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/coupon/:code",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"coupon",
+						":code"
+					],
+					"variable": [
+						{
+							"key": "code",
+							"value": "Test"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "coupon/:id",
+			"request": {
+				"method": "PUT",
 				"header": [
 					{
 						"key": "Authorization",
@@ -311,14 +276,15 @@
 					}
 				},
 				"url": {
-					"raw": "{{base_url}}/coupon?id=1",
+					"raw": "{{base_url}}/coupon/:id",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
-						"coupon"
+						"coupon",
+						":id"
 					],
-					"query": [
+					"variable": [
 						{
 							"key": "id",
 							"value": "1"
@@ -329,9 +295,9 @@
 			"response": []
 		},
 		{
-			"name": "coupon?code",
+			"name": "coupon/:code",
 			"request": {
-				"method": "PATCH",
+				"method": "PUT",
 				"header": [
 					{
 						"key": "Authorization",
@@ -341,7 +307,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"active\": true,\r\n    \"discount\": 20,\r\n    \"expiration_date\": \"2023-01-25T00:00:00\"\r\n}",
+					"raw": "{\r\n    \"active\": true,\r\n    \"discount\": 50,\r\n    \"expiration_date\": \"2030-12-31T00:00:00\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -349,14 +315,77 @@
 					}
 				},
 				"url": {
-					"raw": "{{base_url}}/coupon?code=Test",
+					"raw": "{{base_url}}/coupon/:code",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
-						"coupon"
+						"coupon",
+						":code"
 					],
-					"query": [
+					"variable": [
+						{
+							"key": "code",
+							"value": "Test"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "coupon/verify/:id",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{Authorization}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/coupon/verify/:id",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"coupon",
+						"verify",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "coupon/verify/:code",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{Authorization}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/coupon/verify/:code",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"coupon",
+						"verify",
+						":code"
+					],
+					"variable": [
 						{
 							"key": "code",
 							"value": "Test"
@@ -390,7 +419,7 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "localhost:8000ahttps://coupon-api-oldbot.herokuapp.com",
+			"value": "localhost:8000",
 			"type": "string"
 		},
 		{

@@ -1,4 +1,4 @@
-use crate::helpers::{spawn_app, build_query_params, TestApp, drop_test_database};
+use crate::helpers::{spawn_app, TestApp};
 use chrono::{NaiveDateTime, Utc, Datelike};
 use coupon_api::coupon::{Coupon, CouponInsertRequest, CouponResponse, CouponUpdateRequest};
 use rand::distributions::{Alphanumeric, DistString};
@@ -14,7 +14,7 @@ async fn get_coupon_by_id_returns_a_coupon() {
     let (app, added_coupon) = spawn_app_and_post_coupon_with_coupon_request(coupon_request.clone()).await;
 
     // request for the added coupon using its id
-    let coupon = app.get_and_deserialize_coupon("id", added_coupon.id.to_string()).await;
+    let coupon = app.get_and_deserialize_coupon(format!("/{}", added_coupon.id).as_str()).await;
 
     // Assert
     assert_coupon_fields(coupon, coupon_request);
@@ -27,7 +27,7 @@ async fn get_coupon_by_code_returns_a_coupon() {
     let (app, added_coupon) = spawn_app_and_post_coupon_with_coupon_request(coupon_request.clone()).await;
 
     // request for the added coupon using its code
-    let coupon = app.get_and_deserialize_coupon("code", added_coupon.code).await;
+    let coupon = app.get_and_deserialize_coupon(format!("/{}", added_coupon.code).as_str()).await;
 
     // Assert
      assert_coupon_fields(coupon, coupon_request);
@@ -50,7 +50,7 @@ async fn get_all_coupons_returns_a_list_of_coupons() {
     app.post_coupon(body2, true).await;
 
     // get all coupons
-    let response = app.get_coupon("/all", None).await;
+    let response = app.get_coupon("").await;
     let response_body = response.text().await.expect("failed to get response_body");
     let coupons: Vec<Coupon> = serde_json::from_str(&response_body).expect("Failed to parse CouponResponse from response.");
 
@@ -71,20 +71,20 @@ async fn get_coupon_not_found_returns_404(){
     let app = spawn_app().await;
 
     let test_cases = vec![
-        (Some(vec![("id", "123456789".to_string())]), "not found by id", ""),
-        (Some(vec![("code", "code that does not exist".to_string())]), "not found by code", "")
+        ("123456789".to_string(), "not found by id"),
+        ("code that does not exist".to_string(), "not found by code")
     ];
 
     // Act 
-    for (invalid_body, error_message, endpoint) in test_cases {
-        let response = app.get_coupon(endpoint, invalid_body).await;
+    for (path_param, error_message) in test_cases {
+        let response = app.get_coupon(format!("/{}", path_param).as_str()).await;
 
         // Assert
         assert_eq!(
             404,
             response.status().as_u16(),
             "The endpoint `{}` did not fail with 404 Not Found when the payload was `{}`.",
-            endpoint, error_message
+            path_param, error_message
         );
     }
 
@@ -217,19 +217,19 @@ async fn post_returns_4xx_for_invalid_coupon_data() {
 
 
 /**
- * PATCH
+ * PUT
  */
 #[tokio::test]
-async fn patch_by_id_updates_the_coupon_successfully() {
-    patch_code_test_request("id").await;
+async fn put_by_id_updates_the_coupon_successfully() {
+    put_code_test_request("id".to_string()).await;
 }
 
 #[tokio::test]
-async fn patch_by_code_updates_the_coupon_successfully() {
-    patch_code_test_request("code").await;
+async fn put_by_code_updates_the_coupon_successfully() {
+    put_code_test_request("code".to_string()).await;
 }
 
-async fn patch_code_test_request(query_param: &str) {
+async fn put_code_test_request(path_param: String) {
     // Arrange
     let (app, added_coupon) = spawn_app_and_post_coupon().await;
 
@@ -243,17 +243,22 @@ async fn patch_code_test_request(query_param: &str) {
 
     let body = json!(serde_json::to_value(&coupon_update).unwrap());
     let response;
-    if (query_param == "code"){
-        response = app.patch_coupon(body, build_query_params("code", added_coupon.code)).await;
+    if (path_param == "id"){
+        response = app.put_coupon(added_coupon.id.to_string(), body).await;
     } else {
-        response = app.patch_coupon(body, build_query_params("id", added_coupon.id.to_string())).await;
+        response = app.put_coupon(added_coupon.code.clone(), body).await;
     }
     let response_status = response.status().as_u16();
         
     // Assert
     assert_eq!(200, response_status);
 
-    let coupon = app.get_and_deserialize_coupon("id", added_coupon.id.to_string()).await;
+    let coupon;
+    if (path_param == "id"){
+        coupon = app.get_and_deserialize_coupon(format!("/{}", added_coupon.id).as_str()).await;
+    } else {
+        coupon = app.get_and_deserialize_coupon(format!("/{}", added_coupon.code).as_str()).await;
+    }
 
     assert_coupon_fields(coupon.clone(), coupon_update.into());
     // `date_updated` field now should have value
@@ -261,7 +266,7 @@ async fn patch_code_test_request(query_param: &str) {
 }
 
 #[tokio::test]
-async fn patch_do_not_update_the_code() {
+async fn put_do_not_update_the_code() {
     // Arrange
     let (app, added_coupon) = spawn_app_and_post_coupon().await;
 
@@ -271,38 +276,38 @@ async fn patch_do_not_update_the_code() {
 
     let body = json!(serde_json::to_value(&coupon_update).unwrap());
 
-    let response = app.patch_coupon(body, build_query_params("id", added_coupon.id.to_string()) ).await;
+    let response = app.put_coupon(added_coupon.id.to_string(), body).await;
     let response_status = response.status().as_u16();
         
     // Assert
     assert_eq!(200, response_status);
 
-    let coupon = app.get_and_deserialize_coupon("id", added_coupon.id.to_string()).await;
+    let coupon = app.get_and_deserialize_coupon(format!("/{}", added_coupon.id).as_str()).await;
 
     // the code of the added coupon should not be updated
     assert_ne!(coupon.code, coupon_update.code);
 }
 
 #[tokio::test]
-async fn patch_returns_404_for_coupon_not_found(){
+async fn put_returns_404_for_coupon_not_found(){
     // Arrange
     let app = spawn_app().await;
     let coupon = get_default_coupon_data(get_random_coupon_code());
     let body = json!(serde_json::to_value(&coupon).unwrap());
 
     // Act 
-    let response = app.patch_coupon(body, build_query_params("id", coupon.id.to_string()) ).await;
+    let response = app.put_coupon(coupon.id.to_string(), body).await;
 
     // Assert
     assert_eq!(
         response.status().as_u16(),
         404,
-        "`patch` did not fail with 404 Not Found."
+        "`put` did not fail with 404 Not Found."
     );
 }
 
 #[tokio::test]
-async fn patch_returns_4xx_for_invalid_body_data() {
+async fn put_returns_4xx_for_invalid_body_data() {
     // Arrange
     let (app, added_coupon) = spawn_app_and_post_coupon().await;
 
@@ -343,7 +348,7 @@ async fn patch_returns_4xx_for_invalid_body_data() {
 
     // Act 
     for (invalid_body, error_message, expected_code) in test_cases {
-        let response = app.patch_coupon(invalid_body, build_query_params("id", added_coupon.id.to_string()) ).await;
+        let response = app.put_coupon(added_coupon.id.to_string(), invalid_body).await;
         // Assert
         assert_eq!(
             response.status().as_u16(),
@@ -356,7 +361,7 @@ async fn patch_returns_4xx_for_invalid_body_data() {
 
 
 #[tokio::test]
-async fn patch_returns_422_for_invalid_id_query_param_data() {
+async fn put_returns_404_for_invalid_id_path_param_data() {
     // Arrange
     let app = spawn_app().await;
 
@@ -372,18 +377,18 @@ async fn patch_returns_422_for_invalid_id_query_param_data() {
     let body = json!(serde_json::to_value(&coupon_update).unwrap());
 
     let test_cases = vec![
-        (json!({"id": "string",}), "invalid id (string)"),
-        (json!({"id": -1,}), "invalid id (negative)"),
+        ("string", "invalid id (string)"),
+        ("-1", "invalid id (negative)"),
     ];
 
     // Act 
-    for (invalid_query_value, error_message) in test_cases {
-        let response = app.patch_coupon(body.clone(), build_query_params("id", invalid_query_value.to_string()) ).await;
+    for (invalid_path_param, error_message) in test_cases {
+        let response = app.put_coupon(invalid_path_param.to_string(), body.clone()).await;
 
         // Assert
         assert_eq!(
             response.status().as_u16(),
-            422,
+            404,
             "The API did not fail with 400 Bad Request when the payload was `{}`.",
             error_message
         );
@@ -400,13 +405,13 @@ async fn delete_coupon_by_id_successfully() {
     let (app, added_coupon) = spawn_app_and_post_coupon().await;
 
     // delete added coupon
-    let response = app.delete_coupon("/id", json!({"id": added_coupon.id})).await;
+    let response = app.delete_coupon(added_coupon.id.to_string()).await;
     let response_status = response.status().as_u16();
 
-    assert_eq!(200, response_status);
+    assert_eq!(204, response_status);
 
     // try to get the deleted coupon
-    let response = app.get_coupon("", build_query_params("id", added_coupon.id.to_string()) ).await;
+    let response = app.get_coupon(format!("/{}", added_coupon.id).as_str()).await;
     let response_status = response.status().as_u16();
 
     // Assert 2
@@ -419,13 +424,13 @@ async fn delete_coupon_by_code_successfully() {
     let (app, added_coupon) = spawn_app_and_post_coupon().await;
 
     // delete added coupon
-    let response = app.delete_coupon("/code", json!({"code": added_coupon.code.clone()})).await;
+    let response = app.delete_coupon(added_coupon.code.clone()).await;
     let response_status = response.status().as_u16();
 
-    assert_eq!(200, response_status);
+    assert_eq!(204, response_status);
 
     // try to get the deleted coupon
-    let response = app.get_coupon("", Some(vec![("code", added_coupon.code)]) ).await;
+    let response = app.get_coupon(format!("/{}", added_coupon.code).as_str()).await;
     let response_status = response.status().as_u16();
 
     // Assert 2
@@ -433,51 +438,26 @@ async fn delete_coupon_by_code_successfully() {
 }
 
 #[tokio::test]
-async fn delete_by_id_returns_400_for_invalid_data() {
+async fn delete_returns_4xx_for_invalid_data() {
     // Arrange
     let app = spawn_app().await;
 
     let test_cases = vec![
-        (json!({"some random field": ""}), "missing id"),
-        (json!({"id": "string"}), "invalid id (string)"),
-        (json!({"id": "-1"}), "invalid id (negative)"),
-        (json!({"id": ""}), "invalid id (empty)"),
+        ("💩", "invalid string", 500),
+        ("-1", "invalid id (negative)", 404),
+        ("", "invalid id (empty)", 404),
     ];
 
     // Act 
-    for (invalid_body, error_message) in test_cases {
-        let response = app.delete_coupon("/id", invalid_body).await;
+    for (invalid_path_param, error_message, expected_status) in test_cases {
+        let response = app.delete_coupon(invalid_path_param.to_string()).await;
 
         // Assert
         assert_eq!(
             response.status().as_u16(),
-            400,
-            "The API did not fail with 400 when the payload was `{}`.",
-            error_message
-        );
-    }
-}
-
-#[tokio::test]
-async fn delete_by_code_returns_400_for_invalid_data() {
-    // Arrange
-    let app = spawn_app().await;
-
-    let test_cases = vec![
-        (json!({"some random field": ""}), "missing code"),
-        (json!({"code": -1}), "invalid `code` (negative)"),
-    ];
-
-    // Act 
-    for (invalid_body, error_message) in test_cases {
-        let response = app.delete_coupon("/code", invalid_body).await;
-
-        // Assert
-        assert_eq!(
-            response.status().as_u16(),
-            400,
-            "The API did not fail with 400 when the payload was `{}`.",
-            error_message
+            expected_status,
+            "The API did not fail with {} when the payload was `{}`.",
+            expected_status, error_message
         );
     }
 }
@@ -561,7 +541,7 @@ async fn spawn_app_and_post_coupon_with_coupon_request(coupon_request: CouponIns
 async fn start_verify_test_and_post_coupon(coupon_request: CouponInsertRequest) -> String {
     let (app, _) = spawn_app_and_post_coupon_with_coupon_request(coupon_request.clone()).await;
 
-    let response = app.get_coupon("/verify", build_query_params("code", coupon_request.code) ).await;
+    let response = app.get_coupon(format!("/verify/{}", coupon_request.code).as_str()).await;
     let response_body = response.text().await.expect("Failed to get response_body");
 
     return response_body;

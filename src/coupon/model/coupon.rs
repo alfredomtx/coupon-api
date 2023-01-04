@@ -66,12 +66,6 @@ pub struct CouponResponse {
     pub date_updated: Option<NaiveDateTime>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct CouponQueryRequest {
-    pub id: Option<String>,
-    pub code: Option<String>,
-}
-
 // Convert a Coupon to a CouponResponse
 impl TryFrom<Coupon> for CouponResponse {
     type Error = String;

@@ -1,6 +1,6 @@
 use super::model::{
     CouponInsertRequest, CouponResponse, CouponError, CouponInsert, CouponUpdateRequest,
-    CouponUpdate, CouponQueryRequest
+    CouponUpdate,
 };
 use super::{coupon_repository};
 use chrono::{Utc, Datelike};
@@ -33,7 +33,7 @@ pub async fn get_by_id(id: i32, pool: &MySqlPool) -> Result<CouponResponse, Coup
     let result = coupon_repository::get_by_id(id, pool).await
         .map_err(|error| CouponError::UnexpectedError(error.into()))?;
 
-    let coupon = result.ok_or( CouponError::NotFoundError(anyhow!(format!("Coupon with id `{id}` not found."))))?;
+    let coupon = result.ok_or( CouponError::NotFoundError(anyhow!(format!("Coupon with id `{}` not found.", id))))?;
 
     let coupon_response = coupon.try_into()
         .map_err(|e| CouponError::InternalError(anyhow!(format!("Failed to parse CouponResponse: {}.", e))))?;
@@ -51,20 +51,14 @@ pub async fn get_by_code(code: String, pool: &MySqlPool) -> Result<CouponRespons
     return Ok(coupon_response);
 }
 
-pub async fn get_by_id_or_code(params: CouponQueryRequest, pool: &MySqlPool) -> Result<CouponResponse, CouponError> {
+pub async fn get_by_id_or_code(param: String, pool: &MySqlPool) -> Result<CouponResponse, CouponError> {
     // if the `id` param is present and it is an integer, then we get by id, otherwise by code
-    if let Some(id_param) = params.id {
-        match id_param.parse::<i32>() {
-            Ok(id) => return get_by_id(id, pool).await,
-            Err(_) => {},
-        }
-    };
-
-    if let Some(code) = params.code {
-        return get_by_code(code, pool).await;
+    match param.parse::<i32>() {
+        Ok(id) => return get_by_id(id, pool).await,
+        Err(_) => {},
     }
 
-    return Err(CouponError::ValidationError("Both `id` and `code` params are missing from URL query, one is required.".to_string()));
+    return get_by_code(param, pool).await;
 }
 
 pub async fn insert(coupon_request: CouponInsertRequest, pool: &MySqlPool) -> Result<CouponResponse, CouponError> {
@@ -92,9 +86,9 @@ pub async fn insert(coupon_request: CouponInsertRequest, pool: &MySqlPool) -> Re
     return Ok(coupon_response);
 }
 
-pub async fn update(params: CouponQueryRequest, coupon_request: CouponUpdateRequest, pool: &MySqlPool) -> Result<(), CouponError> {
+pub async fn update(param: String, coupon_request: CouponUpdateRequest, pool: &MySqlPool) -> Result<(), CouponError> {
     // check if coupon exists
-    let coupon = get_by_id_or_code(params, pool).await?;
+    let coupon = get_by_id_or_code(param, pool).await?;
 
     let coupon_update: CouponUpdate = coupon_request.try_into().map_err(|e: String| CouponError::ValidationError(e))?;
 
@@ -102,6 +96,15 @@ pub async fn update(params: CouponQueryRequest, coupon_request: CouponUpdateRequ
         .map_err(|error| CouponError::UnexpectedError(error.into()))?;
 
     return Ok(());
+}
+
+pub async fn delete(param: String, pool: &MySqlPool) -> Result<(), CouponError> {
+    match param.parse::<i32>() {
+        Ok(id) => return delete_by_id(id, pool).await,
+        Err(_) => {},
+    }
+
+    return delete_by_code(param, pool).await;
 }
 
 pub async fn delete_by_id(id: i32, pool: &MySqlPool) -> Result<(), CouponError> {
@@ -131,8 +134,8 @@ pub async fn delete_by_code(code: String, pool: &MySqlPool) -> Result<(), Coupon
 }
 
 /// Verify if the coupon is valid for use, return a boolean.
-pub async fn is_valid(params: CouponQueryRequest, pool: &MySqlPool) -> Result<bool, CouponError> {
-    let coupon = get_by_id_or_code(params, pool).await?;
+pub async fn is_valid(param: String, pool: &MySqlPool) -> Result<bool, CouponError> {
+    let coupon = get_by_id_or_code(param, pool).await?;
 
     // Check if coupon is active
     if (coupon.active == false){

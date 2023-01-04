@@ -3,7 +3,7 @@ use crate::{
     authentication::{validator, authenticate},
     coupon::{
         health_check, get_coupon, get_all_coupons, add_coupon, update_coupon,
-        delete_coupon_by_code, delete_coupon_by_id, verify_coupon
+        delete_coupon, verify_coupon
     },
 };
 use actix_web::{
@@ -60,8 +60,7 @@ pub fn run(listener: TcpListener, db_pool: MySqlPool, configuration: Settings) -
                     .service(get_coupon)
                     .service(add_coupon)
                     .service(update_coupon)
-                    .service(delete_coupon_by_id)
-                    .service(delete_coupon_by_code)
+                    .service(delete_coupon)
                     .service(verify_coupon)
                     .wrap(api_key_auth.clone())
                 )

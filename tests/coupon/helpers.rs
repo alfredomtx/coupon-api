@@ -23,10 +23,6 @@ pub struct TestApp {
     pub api_key: ApiKey,
 }
 
-pub fn build_query_params(key: &str, value: String) -> Option<Vec<(&str, String)>> {
-    return Some(vec![(key, value)]);
-}
-
 impl TestApp {
     pub async fn post_and_deserialize_coupon(&self, body: serde_json::Value) -> CouponResponse {
         let response = self.post_coupon(body, false).await;
@@ -39,13 +35,8 @@ impl TestApp {
         return coupon;
     }
 
-    pub async fn get_and_deserialize_coupon(&self, query_param: &str, value: String) -> CouponResponse {
-        let response;
-        if (query_param == "code"){
-            response = self.get_coupon("", build_query_params("code", value)).await;
-        } else {
-            response = self.get_coupon("", build_query_params("id", value)).await;
-        }
+    pub async fn get_and_deserialize_coupon(&self, endpoint: &str) -> CouponResponse {
+        let response = self.get_coupon(endpoint).await;
         let response_body = response.text().await.expect("failed to get response_body");
         let coupon: CouponResponse = serde_json::from_str(&response_body).expect("GET: Failed to parse CouponResponse from response.");
         return coupon;
@@ -55,15 +46,7 @@ impl TestApp {
         return self.request_coupon(Method::POST, "", body, error_for_status).await;
     }
     
-    pub async fn get_coupon(&self, endpoint: &str, query: Option<Vec<(&str, String)>>) -> reqwest::Response {
-        if let Some(params) = query {
-            return self.api_client
-                .get(&format!("{}/coupon{}", &self.address, endpoint))
-                .query(&params)
-                .send()
-                .await
-                .expect("Failed to perform GET request");
-        }
+    pub async fn get_coupon(&self, endpoint: &str) -> reqwest::Response {
         return self.api_client
             .get(&format!("{}/coupon{}", &self.address, endpoint))
             .send()
@@ -71,26 +54,19 @@ impl TestApp {
             .expect("Failed to perform GET request");
     }
         
-    pub async fn patch_coupon(&self, body: serde_json::Value, query: Option<Vec<(&str, String)>>) -> reqwest::Response {
-        if let Some(params) = query {
-            return self.api_client
-                .patch(&format!("{}/coupon", &self.address))
-                .json(&body)
-                .query(&params)
-                .send()
-                .await
-                .expect("Failed to perform GET request");
-        }
+    pub async fn put_coupon(&self, path_param: String, body: serde_json::Value) -> reqwest::Response {
+        let endpoint = format!("/{}", path_param);
         return self.api_client
-            .patch(&format!("{}/coupon", &self.address))
+            .put(&format!("{}/coupon{}", &self.address, endpoint))
             .json(&body)
             .send()
             .await
             .expect("Failed to perform GET request");
     }
 
-    pub async fn delete_coupon(&self, endpoint: &str, body: serde_json::Value) -> reqwest::Response {
-        return self.request_coupon(Method::DELETE, endpoint, body, false).await;
+    pub async fn delete_coupon(&self, path_param: String) -> reqwest::Response {
+        let endpoint = format!("/{}", path_param);
+        return self.request_coupon(Method::DELETE, endpoint.as_str(), json!({}), false).await;
     }
 
     pub async fn request_coupon(&self, method: Method, endpoint: &str, body: serde_json::Value, error_for_status: bool) -> reqwest::Response {

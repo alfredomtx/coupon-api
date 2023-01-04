@@ -91,8 +91,8 @@ async fn authorization_test_request(expected_status: u16, client: &reqwest::Clie
         "post" => {
             response = client.post(&format!("{}/coupon{}", address, endpoint)).send().await.unwrap();
         },
-        "patch" => {
-            response = client.patch(&format!("{}/coupon{}", address, endpoint)).send().await.unwrap();
+        "put" => {
+            response = client.put(&format!("{}/coupon{}", address, endpoint)).send().await.unwrap();
         },
         "delete" => {
             response = client.delete(&format!("{}/coupon{}", address, endpoint)).send().await.unwrap();
@@ -114,7 +114,7 @@ fn get_test_endpoints() -> Vec<(&'static str, &'static str)> {
         ("get", "/"),
         ("get", "/all"),
         ("post", "/"),
-        ("patch", "/"),
+        ("put", "/"),
         ("delete", "/id"),
         ("delete", "/code"),
     ];
