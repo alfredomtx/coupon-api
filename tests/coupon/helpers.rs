@@ -9,6 +9,7 @@ use reqwest::{
     header:: HeaderMap,
 };
 use secrecy::ExposeSecret;
+use serde_json::json;
 use std::panic;
 use sqlx::{MySqlPool, MySqlConnection, Connection, Executor};
 use once_cell::sync::Lazy;
@@ -140,19 +141,31 @@ pub async fn spawn_app() -> TestApp {
     let _ = tokio::spawn(application.run_until_stopped());
 
     return TestApp {
-        address,
+        address: address.clone(),
         port: application_port,
         db_pool: get_connection_pool(&configuration.database, true),
         db_name: configuration.database.test_database_name.clone(),
-        api_client: create_reqwest_client(&configuration),
+        api_client: create_reqwest_client(&configuration, &address).await,
         api_key: configuration.application.api_key,
     };
 }
 
-fn create_reqwest_client(configuration: &Settings) -> reqwest::Client {
+async fn create_reqwest_client(configuration: &Settings, address: &String) -> reqwest::Client {
+    // request to `/auth` to get a Bearer token and set in in the header for next requests
+    let body = json!({"api_key": &configuration.application.api_key.0.expose_secret()});
+    let response = reqwest::Client::new()
+        .post(&format!("{}/auth", address))
+        .json(&body)
+        .send()
+        .await
+        .expect("Failed to perform request to `/auth`.");
+
+    let bearer: String = response.json().await
+        .expect("Failed to get `/auth` response text.");
+
     // setting default Authorization header
     let mut headers = HeaderMap::new();
-    headers.insert("Authorization", configuration.application.api_key.0.expose_secret().to_string().parse().unwrap());
+    headers.insert("Authorization", bearer.parse().unwrap());
 
     return reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
@@ -166,18 +179,11 @@ async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
     let mut connection = MySqlConnection::connect_with(&config.without_db())
         .await
         .expect("Failed to connect to database.");
-
-    if (!config.test_database_name.contains("TEST")){
-        panic!("`TEST` string not found in Test Database name, for safety it must contains `TEST`.");
-    }
+    
+    drop_test_database(&mut connection, config.test_database_name.clone()).await;
 
     connection
-        .execute(format!(r#"DROP DATABASE IF EXISTS {};"#, config.test_database_name).as_str())
-        .await
-        .expect("Failed to drop test database.");
-        
-    connection
-        .execute(format!(r#"CREATE DATABASE IF NOT EXISTS {};"#, config.test_database_name).as_str())
+        .execute(format!(r#"CREATE DATABASE {};"#, config.test_database_name).as_str())
         .await
         .expect("Failed to create test database.");
     
@@ -195,6 +201,16 @@ async fn configure_test_database(config: &DatabaseSettings) -> MySqlPool {
 }
 
 
+pub async fn drop_test_database(connection: &mut MySqlConnection, test_db_name: String) {
+    if (!test_db_name.contains("TEST")){
+        panic!("`TEST` string not found in Test Database name, for safety it must contains `TEST`.");
+    }
+
+    connection
+        .execute(format!(r#"DROP DATABASE IF EXISTS {};"#, test_db_name).as_str())
+        .await
+        .expect("Failed to drop test database.");
+}
 
 
 // Ensure that the `tracing` stack is only initialised once using `once_cell`

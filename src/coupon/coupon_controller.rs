@@ -21,21 +21,21 @@ pub async fn get_all_coupons(pool: Data::<MySqlPool>) -> Result<impl Responder, 
 }
 
 #[tracing::instrument( name = "Get coupon", skip(pool) )]
-#[get("/")]
+#[get("")]
 pub async fn get_coupon(params: web::Query<CouponQueryRequest>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
     let coupon = coupon_service::get_by_id_or_code(params.into_inner(), &pool).await?;
     return Ok(HttpResponse::Ok().json(coupon));
 }
 
 #[tracing::instrument( name = "Post coupon", skip(pool) )]
-#[post("/")]
+#[post("")]
 pub async fn add_coupon(request: web::Json<CouponInsertRequest>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
     let coupon = coupon_service::insert(request.0, &pool).await?;
     return Ok(HttpResponse::Created().json(coupon));
 }
 
 #[tracing::instrument( name = "Patch coupon", skip(pool) )]
-#[patch("/")]
+#[patch("")]
 pub async fn update_coupon(params: web::Query<CouponQueryRequest>, request: web::Json<CouponUpdateRequest>, pool: Data::<MySqlPool>) -> Result<HttpResponse, CouponError> {
     coupon_service::update(params.into_inner(), request.0, &pool).await?;
     return Ok(HttpResponse::Ok().finish());

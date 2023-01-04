@@ -1,4 +1,4 @@
-use crate::helpers::{spawn_app, build_query_params, TestApp};
+use crate::helpers::{spawn_app, build_query_params, TestApp, drop_test_database};
 use chrono::{NaiveDateTime, Utc, Datelike};
 use coupon_api::coupon::{Coupon, CouponInsertRequest, CouponResponse, CouponUpdateRequest};
 use rand::distributions::{Alphanumeric, DistString};
@@ -71,8 +71,8 @@ async fn get_coupon_not_found_returns_404(){
     let app = spawn_app().await;
 
     let test_cases = vec![
-        (Some(vec![("id", "123456789".to_string())]), "not found by id", "/id"),
-        (Some(vec![("code", "code that does not exist".to_string())]), "not found by code", "/code")
+        (Some(vec![("id", "123456789".to_string())]), "not found by id", ""),
+        (Some(vec![("code", "code that does not exist".to_string())]), "not found by code", "")
     ];
 
     // Act 
@@ -87,6 +87,7 @@ async fn get_coupon_not_found_returns_404(){
             endpoint, error_message
         );
     }
+
 }
 
 
